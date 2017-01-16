@@ -1,0 +1,82 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div ng-controller='unitsController'>
+	<div class='standard_height edit_form' ng-repeat='this_unit in unit_index | orderBy: "number"'>
+		<h2 class='dark'>Unit <span ng-bind='this_unit.number' ng-show='!this_unit.editing'></span>
+			<input type='text' ng-model='this_unit.number' ng-show='this_unit.editing'>
+		</h2>
+		<p>Shareholder: <span ng-bind='this_unit.shareholder' ng-show='!this_unit.editing'></span><input type='text' ng-model='this_unit.shareholder' ng-show='this_unit.editing'></p>
+		<p>Initial Balance: <span ng-bind='this_unit.initial_balance_string | currency' ng-show='!this_unit.editing'></span><input type='text' ng-model='this_unit.initial_balance' ng-show='this_unit.editing'></p>
+		<p><div class='double_height'>Pet Deposit: 
+			<p ng-show='!this_unit.editing'>
+				<span ng-show='this_unit.pet_deposit == true'>Yes</span>
+				<span ng-show='this_unit.pet_deposit == false'>No</span>
+			</p>
+			<p ng-show='this_unit.editing == true'>
+				<input type='radio' ng-model='this_unit.pet_deposit' ng-value='true'>Yes | 
+				<input type='radio' ng-model='this_unit.pet_deposit' ng-value='false'>No |
+			</p>
+		</div>
+		<div class='deposit_and_refund'>
+			<div class='deposit_or_refund' ng-show='this_unit.pet_deposit == true || this_unit.pet_deposit_check_number'>Deposit Chk #: 
+				<span ng-bind='this_unit.pet_deposit_check_number' ng-show='!this_unit.editing'></span>	
+				<input type='text' class='number_width' ng-model='this_unit.pet_deposit_check_number' ng-show='this_unit.editing'>, 
+				Date: <span ng-show='!this_unit.editing'>[a date]</span>
+				<input type='text' class='number_width' disabled='true' ng-show='this_unit.editing'>, 
+				$<span ng-show='!this_unit.editing'>300</span>
+				<input type='text' class='number_width' disabled='true' ng-show='this_unit.editing'>
+			</div>
+			<div class='deposit_or_refund' ng-show='this_unit.pet_deposit_check_number && this_unit.pet_deposit == false'> 
+				Refund Chk #: <span ng-bind='this_unit.pet_refund_check_number' ng-show='!this_unit.editing'></span>
+				<input type='text' class='number_width' ng-model='this_unit.pet_refund_check_number' ng-show='this_unit.editing' disabled='true'>, 
+				Date: <span ng-show='!this_unit.editing'>[a date]</span>
+				<input type='text' class='number_width' disabled='true' ng-show='this_unit.editing'>, 
+				$<span ng-show='!this_unit.editing'>300</span>
+				<input type='text' class='number_width' disabled='true' ng-show='this_unit.editing'>
+			</div>
+		</div></p>
+		<p><div class='double_height'>Sublease Deposit: 
+			<p ng-show='!this_unit.editing'>
+				<span ng-show='this_unit.sublease_deposit == true'>Yes</span>
+				<span ng-show='this_unit.sublease_deposit == false'>No</span>
+			</p>
+			<p ng-show='this_unit.editing == true'>
+				<input type='radio' ng-model='this_unit.sublease_deposit' ng-value='true'>Yes | 
+				<input type='radio' ng-model='this_unit.sublease_deposit' ng-value='false'>No |
+			</p>
+		</div>
+		<div class='deposit_and_refund'>
+			<div class='deposit_or_refund' ng-show='this_unit.sublease_deposit == true || this_unit.sublease_deposit_check_number'>Deposit Chk #: 
+				<span ng-bind='this_unit.sublease_deposit_check_number' ng-show='!this_unit.editing'></span>
+				<input class='number_width' type='text' ng-model='this_unit.sublease_deposit_check_number' ng-show='this_unit.editing'>, 
+				Date: <span ng-show='!this_unit.editing'>[a date]</span>
+				<input class='number_width' type='text' disabled='true' ng-show='this_unit.editing'>, 
+				$<span ng-show='!this_unit.editing'>500</span>
+				<input class='number_width' type='text' disabled='true' ng-show='this_unit.editing'></span>
+			</div>
+			<div class='deposit_or_refund' ng-show='this_unit.sublease_deposit_check_number && this_unit.sublease_deposit == false'> 
+				Refund Chk #: <span ng-bind='this_unit.sublease_refund_check_number' ng-show='!this_unit.editing'></span>
+				<input class='number_width' type='text' ng-model='this_unit.sublease_refund_check_number' ng-show='this_unit.editing' disabled='true'>, 
+				Date: <span ng-show='!this_unit.editing'>[a date]</span>
+				<input class='number_width' type='text' disabled='true' ng-show='this_unit.editing'>, 
+				$<span ng-show='!this_unit.editing'>500</span>
+				<input class='number_width' type='text' disabled='true' ng-show='this_unit.editing'>
+			</div>
+		</div></p>
+		<div class='edit_unit_options'>
+			<input type='submit' ng-click='this_unit.editing = true' value='Edit Unit' ng-show='!this_unit.editing'>
+			<input type='submit' ng-click='this_unit.editing = false' value='Cancel' ng-show='this_unit.editing'>
+			<input type='submit' ng-click='update(this_unit)' value='Update Unit' ng-show='this_unit.editing'>
+		</div>
+	</div>
+	<hr>
+	<div class='edit_form'><input type='submit' ng-show='!new_unit_dialog' ng-click='new_unit_dialog = true' value='Open New Unit Dialog'><span ng-show='new_unit_dialog == true'>Create Unit
+		<p>Unit Number: <input type='text' ng-model='new_unit.number'></p>
+		<p>Shareholder: <input type='text' ng-model='new_unit.shareholder'></p>
+		<p>Initial Balance: $<input type='text' ng-model='new_unit.initial_balance'></p>
+		<p>Pet Deposit:<form><label><input type='radio' ng-model='new_unit.pet_deposit' ng-value='true'>Yes</label> | <label><input type='radio' ng-model='new_unit.pet_deposit' ng-value='false' checked>No</label></form></p>
+		<p ng-show='new_unit.pet_deposit == true'> Deposit Check #: <input type='text' disabled='true'>, Date: <input type='text' disabled='true'>, Amount: <input type='text' disabled='true'></p>
+		<p>Sublease Deposit: <form><label><input type='radio' ng-model='new_unit.sublease_deposit' ng-value='true'>Yes</label> | <label><input type='radio' ng-model='new_unit.sublease_deposit' ng-value='false' checked>No</label></form></p>
+		<p ng-show='new_unit.sublease_deposit == true'> Deposit Check #: <input type='text' disabled='true'>, Date: <input type='text' disabled='true'>, Amount: $<input type='text' disabled='true'></p>
+		<input type='submit' ng-click='create(new_unit)' value='Create Unit'><input type='submit' ng-click='new_unit_dialog = false' value='Cancel New Unit'></span>
+	</div>
+</div>

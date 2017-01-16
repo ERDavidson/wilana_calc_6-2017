@@ -1,0 +1,219 @@
+var mongoose = require('mongoose');
+var Transaction = mongoose.model("Transaction");
+var Unit = mongoose.model("Unit");
+module.exports = {
+	index: function(req,res){
+		Transaction.find({})
+			.populate('_unit', 'number')
+			.exec(function(err, this_index){
+			if (err){
+				res.json({error: "Error while retrieving transaction index: " + err});
+			} else {
+				//console.log("Server transactions controller is returning transaction index: " + JSON.stringify(this_index));
+				res.json({index: this_index});
+			}
+		})
+	},
+	deleteMany: function(req,res){ //works!!!!
+		var error = false;
+
+		Transaction.remove({}, function(err, result){
+			if (err){
+				res.json({error: "Error deleting transactions: " + err});
+				console.log("Error attempting to clear transactions: " + err);
+			} else {
+				console.log("Successfully deleted transactions: " + JSON.stringify(result));
+			}
+		})	
+		Unit.find({}, {number: 1}, function(err, these_units){
+			if (err){
+				res.json({error: "Error getting unit list: " + err});
+				console.log("Error retrieving unit list: " + err);
+			} else {
+				console.log("these_units: " + JSON.stringify(these_units));
+				var this_index = function(){
+					var start_index = -1;
+					var bump = function(bump_or_tell){
+						if (bump_or_tell == "bump"){
+							return(start_index += 1);
+						} else if (bump_or_tell == "tell"){
+							return (start_index);
+						}
+					}
+					return bump;
+				}();
+				for (i=0; i<these_units.length; i++){
+					console.log("about to delete transactions from unit index" + (this_index("tell") +1));
+					Unit.findOne({number: these_units[this_index("bump")].number}, function(err, this_unit){
+						if (err){
+							console.log("Error deleting a unit's transactions: " + err);
+						} else {
+							console.log("transactions for unit " +  this_unit.number + ": " + this_unit.transactions.length);
+							this_unit.transactions = [];
+							this_unit.save(function(err, saved_unit){
+								if (err){
+									console.log("error saving updated unit: " + err);
+								} else {
+									console.log("Updated unit " + saved_unit.number + ", transactions: " + saved_unit.transactions.length);
+								}
+							})
+						}
+					})
+				}
+				res.json({result: "See console for results"});
+			}
+		})
+	},
+	createOne: function(req,res){
+		Unit.findOne({number: req.body.new_transaction._unit}, function(err, this_unit){
+			nascent_transaction = req.body.new_transaction;
+			nascent_transaction._unit = this_unit._id;
+			this_transaction = new Transaction(nascent_transaction);
+			this_transaction.save(function(err){
+				if (err){
+					console.log("Error saving new transaction: " + err);
+					res.json({error: "Error Saving new transaction: " + err});
+				} else {
+					this_unit.transactions.push(this_transaction);
+					this_unit.save(function(err, updated_unit){
+						if (err) {
+							console.log("Error updating unit after transaction saved: " + err);
+							res.json({error: "Error updating unit after transaction saved: " + err});
+						} else {
+							console.log("Transaction creation successful: " + updated_unit);
+							res.json({updated_unit: updated_unit});
+						}
+					})
+				}
+			})
+		})	
+	},
+	createMany: function(req,res){
+		var row_index = function(){
+			var start_index = 0;
+			var bump = function(bump_or_tell){
+				if (bump_or_tell == "bump"){
+					return(start_index += 1);
+				} else if (bump_or_tell == "tell"){
+					return (start_index);
+				}
+			}
+			return bump;
+		}();
+		for (row=1; row<req.body.credit_chart.length; row++){
+			console.log("bumping row index to " + row_index("bump"));
+			Unit.findOne({number: req.body.credit_chart[row_index("tell")][0]}, {_id: 1},  function(err, this_unit){
+				if (err){
+					res.json({error: "Error finding a transaction's unit during createmany transactions: " + err});
+				} else {
+					console.log("Now working on unit " + this_unit.number + "'s transactions");
+					var col_index = function(){
+						var start_index = 0;
+						var bump = function(bump_or_tell){
+							if (bump_or_tell == "bump"){
+								return(start_index += 1);
+							} else if (bump_or_tell == "tell"){
+								return (start_index);
+							}
+						}
+						return bump;
+					}();
+					for(col=1; col<req.body.credit_chart[row_index("tell")].length; col++){
+						console.log("bumping column to " + col_index("bump"));
+						var this_amount = req.body.credit_chart[row_index("tell")][col_index("tell")];
+						if (this_amount > 0){
+							this_transaction = new Transaction({_unit: this_unit._id, type: "Dues", date: req.body.credit_chart[0][col_index("tell")], amount: this_amount});
+							this_transaction.save(function(err, saved_transaction){
+								if (err){
+									console.log("Error saving new transaction: " + err);
+								} else {
+									console.log("transaction saved: " + JSON.stringify(saved_transaction));
+									Unit.findOneAndUpdate({_id: saved_transaction._unit}, {$push: {transactions: saved_transaction._id}}, function(err, result){
+										if (err){
+											console.log("Error appending transaction to unit: " + err);
+										} else {
+											console.log("Appended transaction to unit " + result.number + ". Its transactions are now length " + result.transactions.length);
+										}
+									})
+								}
+							})
+						} else {
+							console.log("Skipping zero-amount transaction at " + row_index("tell") + ", " + col_index("tell"));
+						}
+					}
+				}
+			})
+		}
+		res.json({result: "Hopefully ok"});
+	}
+}
+		/*
+		var create_transaction = function(credit_chart, row, column){	
+			var this_row = row;				// my first attempt at a closure
+			var this_column = column;
+			var this_closure = function(){
+				var this_amount = credit_chart[this_row][this_column];
+				console.log("Starting closure function at row " + this_row + " & column " + this_column);
+				if (this_amount > 0){
+					
+							this_transaction = new Transaction({_unit: this_unit._id, type: "Dues", date: date_list[this_column], amount: this_amount});
+							this_transaction.save(function(err, saved_transaction){
+								if (err){
+									res.json({error: "Error saving new transaction: " + err});
+								} else {
+									console.log("transaction saved: " + JSON.stringify(result));
+									return ({saved: true, unit_id: this_unit._id, transaction_id: saved_transaction._id});
+								}
+							})
+						}
+					})
+				} else {
+					console.log("Skipping zero-amount payment slot at " + this_row + ", " + this_column + " while executing createMany");
+					return({saved: false})
+				}
+			}
+			return this_closure;
+		}
+		var update_unit_of_transaction = function(unit_id, transaction_id_list){
+			Unit.update({})
+		}
+		for (i=1; i<req.body.credit_chart.length;i++){
+			var chart_row = chart_parameters(i);
+			chart_row = chart_row();
+			
+			
+					for(x=1;x<req.body.credit_chart[chart_row].length; x++){
+						var chart_column = chart_parameters(x);
+						chart_column = chart_column();
+						console.log("chart_column created: " + chart_column);
+						var this_amount = req.body.
+						if (this_amount > 0){
+							
+							//console.log("transaction that I want to save: " + JSON.stringify(this_transaction));
+							
+									
+									if (!this_unit.transactions){
+										this_unit.transactions = [];
+									}
+									//console.log(JSON.stringify(this_unit));
+									this_unit['transactions'].push(result._id);
+									this_unit.save(function(err, saved_unit){
+										if (err){
+											res.json({error: "Error saving unit after adding transaction: " + err});
+										} else {
+											console.log("Updated unit " + saved_unit.number + " using parameters " + chart_row + " and " + chart_column + ".  It now has " + saved_unit.transactions.length + " transactions.  The first four sum to " + (
+												Number(saved_unit.transactions[0].amount) + Number(saved_unit.transactions[1].amount) + Number(saved_unit.transactions[2].amount) + Number(saved_unit.transactions[3].amount)));
+										}
+									})
+								}
+							})
+						} else {
+							console.log("Skipping zero-amount payment slot while executing createMany");
+						}
+					}
+				}
+			})
+		}
+	}
+}
+*/

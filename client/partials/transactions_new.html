@@ -1,0 +1,71 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div ng-controller='transactionsNewController' class='new_transactions_forms'>
+	<p>Mass Payment Entry</p>
+	<p>Required Format:
+		<table class='mass_entry_format display_table'>
+			<tr>
+				<td>x</td>
+				<td>9/10/2007</td>
+				<td>10/10/2007</td>
+			</tr>
+			<tr>
+				<td>3</td>
+				<td>275.00</td>
+				<td>0.00</td>
+			</tr>
+			<tr>
+				<td>4</td>
+				<td>275.00</td>	
+				<td>275.00</td>
+			</tr>
+			<tr>
+				<td>14</td>
+				<td>0.00</td>
+				<td>275.00</td>
+			</tr>
+		</table>
+		<p>Be sure to remove all commas and currency symbols.</p>
+		<p>Fields should be tab-delimited. | <input type='submit' ng-click='add_tab()' value='Add tab'></p>
+		<p><input type='submit' ng-click='prepare_update()' value='Parse input'></p>
+	</p>
+	<textarea ng-model='update_input' rows=18 cols=294></textarea>
+	<p ng-show='update_input'>Parsed Input:
+		<table class='display_table'>
+			<tr>
+				<td ng-repeat='unit in display_prep[0]' ng-bind='unit'></td>
+			</tr>
+			<tr ng-repeat='month in display_prep.slice(1)'>
+				<td ng-repeat='entry in month track by $index'>{{entry}}</td>
+			</tr>
+		</table>
+	</p>
+	<input type='submit' ng-click='create_transactions()' value='Execute Update'>
+	<hr>
+	<div class='edit_form'>
+		<p>Individual Transaction Entry</p>
+		<p>Unit: <select ng-options='unit_number for unit_number in unit_list | orderBy: unit_number' ng-model='new_transaction._unit'></select></p>
+		<p>Date: <input type='text' ng-model='new_transaction.date' placeholder='7/07/2007'></p>
+		<p>Amount: <input type='text' ng-model='new_transaction.amount'></p>
+		<p>Type: <select ng-options='type for type in allowed_types' ng-model='new_transaction.type' ng-change='clear_check_number()'></select></p>
+		<p>Check No.: <input type='text' ng-disabled='new_transaction.type!="credit"' ng-model='new_transaction.check_number'></p>
+		<p>Notes: <input type='text' ng-model='new_transaction.notes'></p>
+		<p>
+			<input type='submit' ng-click='create_transaction(new_transaction)' value='Create New Transaction'>
+	</div>
+	<hr>
+	<p><span ng-show='!delete_confirmation_pending'>Delete all Transactions:</span><span ng-show='delete_confirmation_pending'>Really?  All of them?</span></p>
+	<input type='submit' ng-show='!delete_confirmation_pending' ng-click='delete_confirmation_pending = true' value='Delete All Transactions'>
+	<input type='submit' ng-show='delete_confirmation_pending' ng-click='delete_confirmation_pending = false' value='Hmm... no, cancel that'>
+	<input type='submit' ng-show='delete_confirmation_pending' ng-click='delete_all()' value='Every Last One'>
+	<p ng-show='deletion_result' ng-bind='deletion_result'></p>
+	<p ng-show='mass_add_result' ng-bind='mass_add_result'></p>
+	<div ng-show='saved_transaction' class='edit_form'>
+		<p>Saved Transaction:</p>
+		<p>Unit: <span ng-bind='saved_transaction._unit'></span></p>
+		<p>Date: <span ng-bind='saved_transaction.date'></span></p>
+		<p>Amount: <span ng-bind='(saved_transaction.amount / 100).toFixed(2)'></span></p>
+		<p>Type: <span ng-bind='saved_transaction.type'></span></p>
+		<p>Check No.: <span ng-bind='saved_transaction.check_number'></span></p>
+		<p>Notes: <span ng-bind='saved_transaction.notes'></span></p>
+	</div>
+</div>

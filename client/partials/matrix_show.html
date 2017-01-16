@@ -1,0 +1,22 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div class='main_data' ng-controller='matrixesController'>
+	<table class='dues_matrix display_table'>
+		<tr>
+			<th>Unit</th>
+			<th class='dues_data_column' ng-repeat='month in month_labels.labels'>
+				<span ng-bind="month | date : 'MMM yyyy'"></span>
+			</th>
+			<td>Unit</td>
+		</tr>
+		<tr ng-repeat='(key, value) in dues_matrix track by $index'>
+			<td ng-bind = "key"></td>
+			<td class='tooltip' ng-repeat='monthly_rate in value.rates track by $index'>
+				<span class='tooltiptext'>
+					Unit <span ng-bind='key'></span>, <span ng-bind='month_labels.labels[$index] | date: "MMM yyyy"'></span>
+				</span>
+				<span ng-bind = "monthly_rate | currency : $ : 0"></span>
+			</td>
+			<td ng-bind = "key"></td>
+		</tr>
+	</table>
+</div>

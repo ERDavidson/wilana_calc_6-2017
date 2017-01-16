@@ -1,0 +1,84 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div class='options_bar'></div>
+<div class='main_data' ng-controller='taxesController'>
+	<div ng-show='admin'>
+		<form class='new_prop_tax'>
+			<h3>Enter New Tax Year:</h3>
+			<label><input type='checkbox' ng-model='new_tax_options.has_alt' checked> This year billed Unit 1 separately.</label>
+			<label><input type='checkbox' ng-model='new_tax_options.lost_shareholder'> Unit 3 was missing its shareholder this year.</label>
+			<table>
+				<tr>
+					<td>Year Paid:</td>
+					<td><input type='text' ng-model='new_tax.year_paid'></td>
+				</tr>
+				<tr>
+					<td>Main Bill:</td>
+					<td><input type='text' ng-model='new_tax.bill_main'></td>
+					<td ng-show='new_tax_options.has_alt'></td>
+					<td ng-show='new_tax_options.has_alt'>Unit 1 Bill:</td>
+					<td ng-show='new_tax_options.has_alt'><input type='text' ng-model='new_tax.bill_alt'></td>
+				</tr>
+				<tr>
+					<td>Main Land Value:</td>
+					<td><input type='text' ng-model='new_tax.land_val_main'></td>
+					<td ng-show='new_tax_options.has_alt'></td>
+					<td ng-show='new_tax_options.has_alt'>Unit 1 Land Value:</td>
+					<td ng-show='new_tax_options.has_alt'><input type='text' ng-model='new_tax.land_val_alt'></td>
+				</tr>
+				<tr>
+					<td>Main Improvement Value:</td>
+					<td><input type='text' ng-model='new_tax.imp_val_main'></td>
+					<td ng-show='new_tax_options.has_alt'></td>
+					<td ng-show='new_tax_options.has_alt'>Unit 1 Improvement Value:</td>
+					<td ng-show='new_tax_options.has_alt'><input type='text' ng-model='new_tax.imp_val_alt'></td>
+				</tr>
+			</table>
+			<input type='submit' ng-click='create_tax(new_tax)' value='Create Tax Year'>
+		</form>
+	</div>
+	<table>
+		<caption>Property Tax History</caption>
+		<tr>
+			<th>Year paid: </th>
+			<td ng-repeat='year in property_taxes_by_attribute["Year Paid"] track by $index' ng-bind='year'></td>
+		</tr>
+		<tr>
+			<th>Total tax: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Total Tax"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		<tr>
+			<th>Primary bill: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Primary Bill"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		<tr>
+			<th>Sr. citizen bill: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Sr. Citizen Bill"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		<tr>
+			<th>Tax per share: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Tax per share"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		<tr>
+			<th>Tax per small unit:: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Tax per small unit"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		</tr>
+		<tr>
+			<th>Tax per medium unit:: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Tax per medium unit"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		</tr>
+		<tr>
+			<th>Tax per large unit:: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Tax per large unit"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		<tr>
+			<th>Actions: </th>
+			<td ng-repeat='id in property_taxes_by_attribute["Actions"] track by $index'><button ng-click='delete_tax(id)'>Delete Year</button></td>
+		</tr>
+	</table>
+	<hr>
+	<table>
+		<caption>Income Taxes: not yet implemented</caption>
+	</table>
+</div>

@@ -1,0 +1,12 @@
+{
+  "name": "wilana_calc",
+  "version": "0.0.2",
+  "dependencies": {
+    "body-parser": "latest",
+    "express": "latest",
+    "mongoose": "latest",
+   	"fs": "latest",
+   	"bcryptjs": "latest",
+   	"n3-charts": "latest"
+  }
+}

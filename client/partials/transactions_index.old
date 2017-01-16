@@ -1,0 +1,107 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div ng-controller='transactionsIndexController'>
+  <input type='submit' ng-click='find_balance_index()' value="Calculate Current Balances">
+	<input type='submit' ng-click='show_notes = !show_notes' value='Show/Hide Notes'>
+  <hr>
+  <table class='display_table' ng-repeat='(unit, transaction_list) in index_by_unit'>
+    <caption>
+      <h3>Unit <span ng-bind='unit'></span>'s Transactions </h3>
+      <input type='submit' ng-click='toggle_collapse(unit)' value='Collapse/Expand Table'>
+    </caption>
+    <tr>
+      <!--<th>_id:</th>-->
+      <th>Date</th>
+      <th>Type</th>
+      <th>Amount</th>
+      <th>Check #</th>
+      <th ng-show='show_notes'>Notes</th>
+      <th>Actions</th>{{Object.typeof(transaction_list)}}
+    </tr>
+    <tr ng-show='collapsed[unit]' ng-repeat='this_transaction in transaction_list | orderBy: date_for_sorting: true'>
+      <!--<td>
+        <span ng-bind='this_transaction._id'></span>
+      </td>-->
+      <td>
+        <span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.date'></span>
+        <input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.date'>
+      </td>
+      <td>
+        <span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.type'></span>
+        <select ng-options='type for type in allowed_types' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.type'></select>
+      </td>
+      <td>
+        <span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='(this_transaction.amount / 100).toFixed(2)'></span>
+        <input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.amount'>
+      </td>
+      <td>
+        <span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.check_number'></span>
+        <input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-disabled='updated_transaction.type!="credit"' ng-model='updated_transaction.check_number'>
+      </td>
+      <td class='notes' ng-show='show_notes'>
+        <span class='short_message' ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.notes'></span>
+        <input type='text' class='short_message' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.notes'>
+      </td>
+      <td>
+        <input type='submit' ng-show='edit_lock.id != this_transaction._id' ng-disabled='edit_lock.type != false' ng-click='edit_transaction(this_transaction)' value='Edit'>
+        <input type='submit' ng-show='edit_lock.id != this_transaction._id' ng-disabled='edit_lock.type != false' ng-click='prepare_delete(this_transaction._id)' value='Delete'>
+        <input type='submit' ng-show='edit_lock.id === this_transaction._id' ng-click='cancel()'' value='Cancel'>
+        <input type='submit' ng-show='(edit_lock.type === "edit") && (edit_lock.id === this_transaction._id)' ng-click='update_transaction(updated_transaction)' value='Submit Updated Transaction'>
+        <input type='submit' ng-show='(edit_lock.type === "delete") && (edit_lock.id === this_transaction._id)' ng-click='delete_transaction(this_transaction, unit)' value='Confirm Delete Transaction'>
+      </td>
+    </tr>
+  </table>
+  </div>
+<!-- | Show payments
+  <label><input type='radio' ng-model='payment_display' value='chart' checked>as chart</label>
+  <label><input type='radio' ng-model='payment_display' value='bills'>as bills</label>
+    <table class='display_table'>
+    <tr>
+      <th>Unit #</th>
+      <th>Shareholder</th>
+      <th>Current Balance</th>
+      <th>Initial Balance</th>
+      <th>Late Fees</th>
+      <th>Payments</th>
+    </tr>
+    <tr ng-repeat='unit in index'>
+      <td ng-bind='unit.number'></td>
+      <td ng-bind='unit.shareholder'></td>
+      <td ng-bind='unit.current_balance'></td>
+      <td ng-bind='unit.initial_balance'></td>
+      <td>
+        <table ng-class='payment_list' ng-show='unit.late_fees.length > 0'>
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+          </tr>
+          <tr ng-repeat='fee in unit.late_fees'>
+            <td ng-bind='fee.date'></td>
+            <td ng-bind='fee.amount'></td>
+          </tr>
+        </table>
+      </td>
+      <td>
+      	<span ng-show='payment_display=="bills"' class='payment_icon' ng-repeat='payment in unit.credits'>
+      		<span class='payment_text'>${{payment.amount}}</span>
+      		<span class='small payment_text'>{{payment.date}}</span>
+      	</span>
+        <table ng-class="{payment_list: !expand[{{unit.number}}], tall_payment_list: expand[{{unit.number}}]}" ng-show='payment_display=="chart"'>
+          <tr>
+            <th>Dues Charged</th>
+            <th>Payments Received</th>
+            <th>Check #</th>
+            <th>Payment Date</th>
+          </tr>
+          <tr ng-repeat='payment in unit.credits track by $index'>
+            <td ng-bind='unit.transactions.charges[$index]'></td>
+            <td ng-bind='payment.amount'></td>
+            <td ng-bind='payment.credits[$index].number'></td>
+            <td ng-bind='payment.date'></td>
+          </tr>
+        </table> the insert method is messy as fuck, but appears to work
+        <input ng-show='expand[unit.number]' type='submit' ng-click='payment_list_contract(unit.number)' value='Collapse'>
+        <input ng-show='!expand[unit.number]' type='submit' ng-click='payment_list_expand(unit.number)' value='Expand'>
+      </td>
+    </tr>
+  </table>
+</div> -->

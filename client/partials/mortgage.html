@@ -1,0 +1,78 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div ng-controller='mortgagesController'>
+	<div class='options_bar'>
+		<div ng-class="{'show mortgage long_button': true, unpressed: (mortgage_index.indexOf(this_mortgage) != main_data.show), pressed: (mortgage_index.indexOf(this_mortgage) === main_data.show)}" ng-repeat='this_mortgage in mortgage_index track by $index' ng-click='show_mortgage($index)'>
+			<span class='button_label'><h3>Show <span ng-bind='this_mortgage.name'></span></h3></span>
+		</div>
+		<div ng-class="{'new mortgage long_button': true, unpressed: (!main_data.new), pressed: (main_data.new)}" ng-click='show_mortgage("new")'><h3 class='button_label'>New Mortgage</h3></div>
+	</div>
+	<div class='main_data' ng-show='main_data.show > -1'>
+		<table>
+			<caption ng-bind='mortgage_index[main_data.show].name'></caption>
+			<tr>
+				<th>Date</th>
+				<th>Payment</th>
+				<th>Interest</th>
+				<th>Principal</th>
+				<th>Running Balance</th>
+			</tr>
+			<tr>
+				<td ng-bind='mortgage_index[main_data.show].initial_date | date'></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td ng-bind='mortgage_index[main_data.show].initial_balance / 100 | currency'></td>
+			</tr>
+			<tr ng-repeat='payment in show_this_mortgage.payments track by $index'>
+				<td ng-bind='payment.pay_date | date'></td>
+				<td ng-bind='payment.total / 100 | currency'></td>
+				<td ng-bind='payment.interest / 100 | currency'></td>
+				<td ng-bind='payment.principal /100 | currency'></td>
+				<td ng-bind='show_this_mortgage.running_balances[$index] /100 | currency'></td>
+			</tr>
+		</table>
+	</div>
+	<div class='main_data' ng-show='main_data.new'>
+		<form>Enter New mortgage
+			<p>Name: <input type='text' ng-model='new_mortgage.name'></p>
+			<p>Initial Date: <input type='text' ng-model='new_mortgage.initial_date'></p>
+			<p>Initial Balance: <input type='text' ng-model='new_mortgage.initial_balance'></p>
+			<p>Payments: <textarea ng-model='new_mortgage.raw_payments' rows=60 cols=80></textarea></p>
+			<input type='submit' ng-click='parse_mortgage(new_mortgage)' value='Parse mortgage'>
+			<input type='submit' ng-click='create_mortgage()' value='Create mortgage'>
+		</form>
+		<div>
+			<p>Payment chart format:  tab-delimited, no currency markers or commas.  1 payment per line, order Date Total Interest Principal</p>
+			<p>2/1/2013 \t 1981.11 \t 564.41 \t 1416.70</p>
+			<p>3/1/2013	\t 1981.11 \t 746.76 \t	1234.35</p>
+			<p class='error'> & currently must multiply all amounts *100</p>
+		</div>
+		<table>
+			<tr>
+				<th>Date</th>
+				<th>Payment</th>
+				<th>Interest</th>
+				<th>Principal</th>
+				<th>Running Balance</th>
+			</tr>
+			<tr>
+				<td ng-bind='parsed_mortgage.initial_date | date'></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td ng-bind='parsed_mortgage.initial_balance | currency'></td>
+			</tr>
+			<tr ng-repeat='payment in parsed_mortgage.payments track by $index'>
+				<td ng-bind='payment.pay_date | date'></td>
+				<td ng-bind='payment.total | currency'></td>
+				<td ng-bind='payment.interest | currency'></td>
+				<td ng-bind='payment.principal | currency'></td>
+				<td ng-bind='parsed_mortgage.running_balances[$index] | currency'></td>
+		</table>
+	</div>
+	<div class='amortization_chart'>
+		<linechart data="chart_data" options="chart_options"></linechart>
+	</div>
+	<p>Chart Data: <span ng-bind='Object.keys(chart_data)'></span></p>
+	<p>Chart Options: <span ng-bind='Object.keys(chart_options)'></span></p>
+</div>

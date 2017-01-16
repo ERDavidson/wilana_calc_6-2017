@@ -1,0 +1,142 @@
+<div class='header_pane' ng-controller='appController'>
+	<div class='session_box'>
+		<div class='not_block'>
+			<h3 ng-bind='welcome()'></h3>
+			<div ng-show='!logged_in' class='login'>
+				<h3>Please log in.</h3>
+				<table>
+					<caption>via this site:</caption>
+					<tr>
+						<td>Unit #: </td>
+						<td><select ng-model='login_info.unit' class='credentials' ng-options='user_object.unit as user_object.unit for (user, user_object) in user_list'></select></td>
+					</tr>
+					<tr>
+						<td>Password: </td>
+						<td><input type='password' class='credentials' ng-keyup="$event.keyCode == 13 && login(login_info)" ng-model='login_info.pw'></td>
+						<td><input type='submit' ng-click='login(login_info)' value='Log In'></td>
+					</tr>
+				</table>
+				<hr>
+				<p>Or with Google:</p>
+				<div class='gin_wrapper' ng-click='load_gin()'>
+					<div class="g-signin2" data-onsuccess="onSignIn"></div>
+				</div>
+			</div>
+		</div>
+		<div ng-show='!logged_in' class='login'>
+			<h3>Or register:</h3>
+			<table>
+				<tr>
+					<td>Unit #: </td>
+					<td><input type='text' class='credentials' ng-model='new_user.unit'></td>
+				</tr>
+				<tr>
+					<td>Password: </td>
+					<td><input type='password'  class='credentials' ng-model='new_user.pw'></td>
+				</tr>
+				<tr>
+					<td>Confirm Password: </td>
+					<td><input type='password'  class='credentials' ng-model='new_user.pw_confirm'></td>
+				</tr>
+			</table>
+			<input type='submit' ng-disabled='!new_user.unit || !new_user.pw' ng-click='register(new_user)' value='Register New User'>
+		</div>
+		<div ng-show='logged_in'>
+			<p>
+					<input type='submit' ng-click='logout()' value='Log Out (standard)'>
+					<input type='submit' ng-click='logout_google()' value='Log Out (via Google)'>
+					<input type='submit' ng-show='!edit_user' ng-click='edit_user = true' value='Edit Password'>
+			</p>
+			<form ng-show='edit_user'>
+				<p>
+					<input type='submit' ng-show='edit_user' ng-click='edit_user = false' value='Cancel Edit PW'>
+					<input type='submit' ng-show='edit_user' ng-click='update_user()' value='Submit Updated Password'>
+				</p>
+				<p>
+					New Password: <input type='password' ng-model='updated_user.pw_hash'>
+					Confirm Password: <input type='password' ng-model='updated_user.pw_confirm'>
+				</p>
+			</form>
+		</div>
+	</div>
+	<div class='nav_box'>
+		<h1 class='center_horiz'>Wilana Unit Account Tools</h1>
+		<div class='link_line center_horiz' ng-show='current_user'>
+			<a ng-class="{'current_view': nav_topic === 'unit_accounts'}" href="" ng-click='new_nav_topic("unit_accounts")'>Unit Accounts</a> &nbsp&nbsp|&nbsp&nbsp 
+			<a ng-class="{'current_view': nav_topic === 'budget_spending'}" href="" ng-click='new_nav_topic("budget_spending")'>Budget & Spending</a> &nbsp&nbsp|&nbsp&nbsp 
+			<a ng-class="{'current_view': nav_topic === 'directory_docs'}" href="" ng-click='new_nav_topic("directory_docs")'>Directory & Documents</a> &nbsp&nbsp|&nbsp&nbsp 
+			<a ng-class="{'current_view': nav_topic === 'feedback_prefs'}" href="" ng-click='new_nav_topic("feedback_prefs")'>Feedback & Preferences</a>
+			<hr>
+			<span ng-show='nav_topic === "unit_accounts"'>
+				<a ng-class="{'current_view': this_view === '/matrix'}" href='#/matrix'>Dues Rates</a> &nbsp&nbsp|&nbsp&nbsp 
+				<a ng-class="{'current_view': this_view === '/reports'}" href='#/reports'>Current Balance</a> &nbsp&nbsp|&nbsp&nbsp 
+				<a ng-class="{'current_view': this_view === '/transactions'}" href='#/transactions'>Search Transactions</a> &nbsp&nbsp|&nbsp&nbsp 
+				<a ng-class="{'current_view': this_view === '/shareholder_accounts'}" href='#/shareholder_accounts'>Shareholder Accounts</a>
+				<span ng-show='admin'>
+					 &nbsp&nbsp|&nbsp&nbsp <a ng-class="{'current_view': this_view === '/transactions/new'}" href='#/transactions/new'>New Transactions</a>
+				</span>
+			</span>
+			<span ng-show='nav_topic === "budget_spending"'>
+				<a ng-class="{'current_view': this_view === '/taxes'}" href='#/taxes'>Taxes</a> &nbsp&nbsp|&nbsp&nbsp 
+				<a ng-class="{'current_view': this_view === '/mortgage'}" href='#/mortgage'>Blanket Mortgage</a> &nbsp&nbsp|&nbsp&nbsp 
+				<a ng-class="{'current_view': this_view === '/budget'}" href='#/budget'>Current Budget</a> &nbsp&nbsp|&nbsp&nbsp
+				<a ng-class="{'current_view': this_view === '/spending_history'}" href='#/spending_history'>Spending History</a>  
+			</span>
+			<span ng-show='nav_topic === "directory_docs"'>
+				<a ng-class="{'current_view': this_view === '/directory'}" href='#/units'>Unit Directory</a> &nbsp&nbsp|&nbsp&nbsp 
+				<a ng-class="{'current_view': this_view === '/documents'}" href='#/documents'>Governing Documents & Useful Links</a>
+			</span>
+			<span ng-show='nav_topic === "feedback_prefs"'>
+				<a ng-class="{'current_view': this_view === '/feedback'}" href='#/feedback'>Feedback</a> &nbsp&nbsp|&nbsp&nbsp 
+				<a ng-class="{'current_view': this_view === '/preferences'}" href='#/preferences'>Preferences & Email Reminders</a>
+			</span>
+		</div>
+		<h2 class='center_horiz' ng-bind='this_page_title'></h2>
+	</div>
+	<table class='log_box'>
+		<caption class='log_caption'>
+			<span>Message Log</span><span ng-show='admin'> | <input type='submit' ng-click='unit_transaction_reference_health()' value='Check model reference health'></span>
+		</caption>
+		<tr>
+			<th class='timestamp'>Time</th>
+			<th class='message'>Message Text</th>
+		</tr>
+		<tr ng-class='{error: message.type=="error"}' ng-repeat='message in message_log track by $index'>
+			<td class='timestmap' ng-bind='message.date'></td>
+			<td class='message' ng-bind='message.text'></td>
+		</tr>
+	</table>
+</div>
+<!--<hr>
+
+	<input ng-show='current_user === "Admin"' type='submit' ng-click='logoff_many()' value='Log off all users'>
+
+	<h2>Account History for Unit <span ng-bind='current_user'></span></h2>
+	<div class='full_history'>
+		<table>
+			<tr>
+				<th>Date</th>
+				<th>Charges</th>
+				<th>Credits</th>
+				<th>Type</th>
+				<th>Check No.</th>
+				<th>Running Balance</th>
+			</tr>
+			<tr ng-repeat='row in this_report.transactions track by $index'>
+				<td ng-bind='row.date'></td>
+				<td><span ng-show='row.charge_amount' ng-bind="'$'+row.charge_amount"></span></td>
+				<td><span ng-show='row.credit_amount' ng-bind="'$'+row.credit_amount"></span></td>
+				<td ng-bind='row.type'></td>
+				<td ng-bind='row.check_number'></td>
+				<td ng-bind="'$'+this_report.balances[$index]"></td>
+			</tr>
+			<tr>
+				<td>12/31/2010</td>
+				<td></td>
+				<td></td>
+				<td>Initial Balance</td>
+				<td></td>
+				<td><span ng-bind="'$'+initial_balance"></span></td>
+			</tr>
+		</table>
+	</div>-->

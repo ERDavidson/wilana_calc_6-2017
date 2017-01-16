@@ -1,0 +1,138 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div ng-controller='reportsController'>
+	<div class='options_bar overflow'>
+		<h2 class='header'>Unit Balances</h2>
+		<table ng-show='admin && these_balances' class='balance_summary'>
+			<tr>
+				<th>Unit</th>
+				<th>Current Balance</th>
+				<th colspan='2'>Deposits</th>
+			</tr>
+			<tr ng-repeat='(unit, balance) in these_balances'>
+				<td class='tooltip'>
+					<div ng-class="{'pressed small_button': (active_unit_button === unit), 'unpressed small_button': (active_unit_button != unit)}" ng-click='unit_button_click(unit)'>
+						<h2 class='button_label' ng-bind='unit'></h2>
+						<span class='slightly_small tooltiptext'>View unit's transactions</span>
+					</div>
+				</td>
+				<td ng-bind='balance | currency'></td>
+				<td class='tooltip'><span ng-show='deposit_index[unit].pet_deposit'><span class='slightly_small tooltiptext'>Pet\nDeposit</span>P</span></td>
+				<td class='tooltip'><span ng-show='deposit_index[unit].sublease_deposit'><span class='slightly_small tooltiptext'>Sublease Deposit</span>S</span></td>
+			</tr>
+		</table>
+		<table ng-show='shareholder_balance_list'>
+			<tr>
+				<th>Balance</th>
+				<th>Unit Count</th>
+			</tr>
+			<tr ng-repeat="(balance_size, unit_count) in shareholder_balance_list"> 
+				<td ng-bind='balance_size | currency'></td>
+				<td ng-bind='unit_count'></td>
+			</tr>
+			<tr>
+				<td ng-bind='balance_total | currency'></td>
+				<td ng-bind='total_unit_count'></td>
+			</tr>
+		</table>
+	</div>
+	<div ng-include="'./partials/includes/filter_bar.html'" class='options_bar'></div>
+	<div class='main_data'>
+		<div ng-show='this_report' class='full_history'>
+			<h2>Account History for Unit <span ng-bind='reported_unit'></span></h2>
+			<table>
+				<tr>
+					<th>Date</th>
+					<th>Charges</th>
+					<th>Credits</th>
+					<th>Type</th>
+					<th>Check No.</th>
+					<th>Running Balance</th>
+				</tr>
+				<tr ng-repeat='row in this_report.transactions track by $index'>
+					<td ng-bind='row.date'></td>
+					<td><span ng-show='row.charge_amount' ng-bind="row.charge_amount | currency"></span></td>
+					<td><span ng-show='row.credit_amount' ng-bind="row.credit_amount | currency"></span></td>
+					<td ng-bind='row.type'></td>
+					<td ng-bind='row.check_number'></td>
+					<td ng-bind="this_report.balances[$index] | currency"></td>
+				</tr>
+				<tr>
+					<td>12/31/2010</td>
+					<td></td>
+					<td></td>
+					<td>Initial Balance</td>
+					<td></td>
+					<td><span ng-bind="'$'+initial_balance"></span></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</div>
+
+<!--<div ng-show='this_report'>
+	<table class='display_table'>
+		<tr>
+			<th>Date</th>
+			<th>Dues</th>
+			<th>Assessents</th>
+			<th>Fees</th>
+			<th>Payments</th>
+			<th>Check No.</th>
+			<th>Running Balance</th>
+		</tr>
+		<tr>
+			<td>12/31/2010</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td><span ng-bind='initial_balance'></span></td>
+		</tr>
+		<tr ng-repeat='row in this_report.dues track by $index' ng-click='edit_transaction()'>
+			<td ng-bind='this_report.dues[$index].date + this_report.assessments[$index].date + this_report.fees[$index].date + this_report.payments[$index].date'></td>
+			<td ng-bind='this_report.dues[$index].amount'></td>
+			<td ng-bind='this_report.assessments[$index].amount'></td>
+			<td ng-bind='this_report.fees[$index].amount'></td>
+			<td ng-bind='this_report.payments[$index].amount'></td>
+			<td ng-bind='this_report.payments[$index].number'></td>
+			<td ng-bind='this_report.balance[$index]'></td>
+		</tr>
+	</table>
+</div>
+<table class='display_table'>Transaction Editor -->
+<!-- This will be great but really needs implementation of transaction as a model -->
+<!--	<tr>
+	  <td>ID:</td>
+	  <td ng-bind='this_transaction._id'></td>
+	</tr>
+	<tr>
+	  <td>Unit:</td>
+	  <td ng-bind='this_transaction.unit'></td>
+	</tr>
+	<tr>
+	  <td>Date:</td>
+	  <td ng-bind='this_transaction.date'></td>
+	</tr>
+	<tr>
+	  <td>Type:</td>
+	  <td ng-bind='this_transaction.type'></td>
+	</tr>
+	<tr>
+	  <td>Amount:</td>
+	  <td ng-bind='this_transaction.amount'></td>
+	</tr>
+	<tr>
+	  <td>Check No.:</td>
+	  <td ng-bind='this_transaction.number'></td>
+	</tr>
+	<tr>
+	  <td>Notes:</td>
+	  <td ng-bind='this_transaction.notes'></td>
+	</tr>
+</table>-->
+<!--<table class='display_table' ng=show='this_report'>
+	<tr>
+		<td ng-bind='this_report'></td>
+	</tr>
+</table>-->

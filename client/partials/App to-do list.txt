@@ -1,0 +1,54 @@
+App to-do list
+
+Important stuff for tomorrow
+
+figure out n3 margins
+figure how how to get google login to reliably appear
+make client-side view restrictions for login in general & for shareholder-users
+property tax for individual units
+revamp reports to look more like fancy_new_view
+consolidate views
+22's balance is fucked up
+link dues & assessment & fee income history to actual transactions
+GIT INIT
+
+
+
+minor tweaks
+
+transaction searches sort weirdly with multiple filters clicking on and off
+also managed to see all of 5&22's credits & otherfees even though credits was not tapped.
+add date filter
+make date start sorted descending (newest first)
+Cut out old code
+review rem & directives & bootstrap
+add filtered sums to transaction index
+double-check storage rental values for 5 & 22
+make server-side secure against creepy client shenanigans
+change running balances to have types
+feedback entry
+user-specific privacy settings & notification signup
+deploy on amazon
+plumbing reimbursements followup
+make spending history work completely off of chart-formatted  data
+
+
+Wilana Task List			
+			
+Call Virgil re: 2016 taxes & prior amendeds			
+January dues			
+figure 2016 Prop Tax notice					
+Bob Oates bill investigation			
+Energy Star certification			
+2017 budget update & distribute			
+appeal prop tax.  Ideas:  inflation?  Indep appraisal?			
+correct John's shares			
+2016 financial report			
+wilana app			
+			
+			
+			
+			
+			
+			
+			
