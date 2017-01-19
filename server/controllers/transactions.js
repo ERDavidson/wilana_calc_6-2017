@@ -64,7 +64,6 @@ module.exports = {
 			if (err){
 				res.json({error: "Error while retrieving transaction index: " + err});
 			} else {
-				//console.log("Server transactions controller is returning transaction index: " + JSON.stringify(this_index));
 				res.json({index: this_index});
 			}
 		})

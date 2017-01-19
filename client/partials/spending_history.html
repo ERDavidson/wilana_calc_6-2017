@@ -75,6 +75,10 @@
 			<th colspan='3'><h3>Income Totals</h3></th>
 			<td ng-repeat='(year, total) in supercategory_index["Income"].Total' ng-bind='total | currency'></td><!-- this should be safe to iterate over though -->
 		</tr>
+		<tr>
+			<th colspan='3'><h3>Income in Database</h3></th>
+			<td ng-repeat='(year, total) in recorded_incomes' ng-bind='total | currency'></td>
+		</tr>
 		<tr></tr>
 		<tr>
 			<th colspan='3'><h2>Income - Expenses</h2></th>
@@ -98,11 +102,15 @@
 		<input type='submit' ng-click='create_budget_line(new_line)' value='Create Category'>
 	</form>
 	<h2>Expense Graph</h2>
-	<div class='spending_chart'>
+	<nvd3 options='chart_options' data='expense_chart_data'></nvd3>
+	<h2>Income Graph</h2>
+	<nvd3 options='chart_options' data='income_chart_data'></nvd3>
+</div>
+<!--	<div class='spending_chart'>
 		<linechart data="expense_chart_data" options="expense_chart_options"></linechart>
 	</div>
 	<h2>Income Graph</h2>
 	<div class='spending_chart'>
 		<linechart data="income_chart_data" options="income_chart_options"></linechart>
 	</div>
-</div>
+-->

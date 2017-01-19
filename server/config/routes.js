@@ -2,12 +2,16 @@ var dues_matrixes = require('./../controllers/dues_matrixes.js');
 var units = require('./../controllers/units.js');
 var transactions = require('./../controllers/transactions.js');
 var users = require('./../controllers/users.js');
+var messages = require('./../controllers/messages.js');
 var mortgages = require('./../controllers/mortgages.js');
 var property_taxes = require('./../controllers/property_taxes.js');
 var budget_lines = require('./../controllers/budget_lines.js');
 module.exports = function(app){
 	app.post('/users/register', function(req,res){
 		users.register(req,res);
+	});
+	app.get('/feedback', function(req,res){
+		messages.index(req,res);
 	});
 	app.post('/users/login', function(req,res){
 		users.login(req,res);
@@ -54,6 +58,12 @@ module.exports = function(app){
 	});
 	app.post('/units/create', function(req,res){
 		units.create(req,res);
+	});
+	app.post('/feedback/create', function(req,res){
+		messages.create(req,res);
+	});
+	app.post('/feedback/:id/delete', function(req,res){
+		messages.delete(req,res);
 	});
 	app.post('/transactions/createOne', function(req,res){
 		transactions.createOne(req,res);

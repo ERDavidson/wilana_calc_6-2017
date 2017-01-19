@@ -12,7 +12,7 @@
 				<td class='tooltip'>
 					<div ng-class="{'pressed small_button': (active_unit_button === unit), 'unpressed small_button': (active_unit_button != unit)}" ng-click='unit_button_click(unit)'>
 						<h2 class='button_label' ng-bind='unit'></h2>
-						<span class='slightly_small tooltiptext'>View unit's transactions</span>
+						<span class='slightly_small tooltiptext'>Click to view full account history</span>
 					</div>
 				</td>
 				<td ng-bind='balance | currency'></td>
@@ -47,6 +47,7 @@
 					<th>Type</th>
 					<th>Check No.</th>
 					<th>Running Balance</th>
+					<th>Notes</th>
 				</tr>
 				<tr ng-repeat='row in this_report.transactions track by $index'>
 					<td ng-bind='row.date'></td>
@@ -55,14 +56,16 @@
 					<td ng-bind='row.type'></td>
 					<td ng-bind='row.check_number'></td>
 					<td ng-bind="this_report.balances[$index] | currency"></td>
+					<td ng-bind='row.notes'></td>
 				</tr>
 				<tr>
 					<td>12/31/2010</td>
 					<td></td>
 					<td></td>
-					<td>Initial Balance</td>
+					<td></td>
 					<td></td>
 					<td><span ng-bind="'$'+initial_balance"></span></td>
+					<td>Initial Balance</td>
 				</tr>
 			</table>
 		</div>

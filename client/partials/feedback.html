@@ -1,4 +1,39 @@
 <div ng-include="'./partials/includes/nav_pane.html'"></div>
-<div>
-	<h3>zFuture Feedback</h3>
+<div ng-controller='feedbacksController' class='feedback_view'>
+	<p>Got suggestions, complaints, comments, rants, questions, corrections, praise, or cries for help about this site?  Feel free to email them to Eliott at wilanatreasurer@gmail.com, or submit them via the form below:	
+	<form>
+		<p>Message title: <input type='text' ng-model='new_feedback.title'></p>
+		<p>Message text: <textarea rows='30' cols='100' ng-model='new_feedback.text'></textarea></p>
+		<p>Your name: <input type='text' ng-model='new_feedback.author'></p>
+		<p>Email address for replies: <input type='text' ng-model='new_feedback.email'></p>
+		<p>Your unit: <span ng-bind='current_user'></span></p>
+		<p>Date submitted: <span ng-bind='today | date'></span></p>
+		<input type='submit' ng-click='create_feedback(new_feedback)' value='Submit Feedback'>
+	</form>
+	<div ng-show='feedback_submitted'>
+		<p>Thank you!  Your feedback has been submitted.  Here's a copy for your records:</p>
+		<p>Author: <span ng-bind='created_feedback.author'></span>, Unit <span ng-bind='created_feedback.unit'></span> (<span ng-bind='created_feedback.email'></span>)</p>
+		<p>Date sent: <span ng-bind='created_feedback.date'></span></p>
+		<p ng-bind='created_feedback.text'></p>
+	</div>
+	<div ng-show='admin'>
+		<table>
+			<tr>
+				<th>Date Received</th>
+				<th>Unit</th>
+				<th>Author</th>
+				<th>Email</th>
+				<th>Message</th>
+				<th>Actions</th>
+			</tr>
+			<tr ng-repeat='message in feedback_index'>
+				<td ng-bind='message.date | date'></td>
+				<td ng-bind='message.unit'></td>
+				<td ng-bind='message.author'></td>
+				<td ng-bind='message.email'></td>
+				<td class='feedback_text' ng-bind='message.text'></td>
+				<td><input type='submit' ng-click='delete(message._id)' value='Delete'></td>
+			</tr>
+		</table>
+	</div>
 </div>

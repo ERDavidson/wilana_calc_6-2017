@@ -222,6 +222,9 @@ table.spending_history{
 	padding-left: 7px;
 	padding-right: 7px;
 }
+.feedback_view{
+	padding: 12px;
+}
 .standard_height{
 	height: 260px;
 }
@@ -337,7 +340,7 @@ table.spending_history{
 	margin: auto;
 	user-select: none;
 }
-.trans_filter.filter_by{
+.trans_filter{
 	font-size: 1.2rem;
 	padding: 3px 10px;
 }

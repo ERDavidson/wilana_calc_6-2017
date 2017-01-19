@@ -2,9 +2,11 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var MessageSchema = new mongoose.Schema({
 	author: String,
+	email: String,
+	date: Date,
 	unit: String,
 	title: String,
-	text: String,
+	text: String
 },
 {
 	timestamps: true

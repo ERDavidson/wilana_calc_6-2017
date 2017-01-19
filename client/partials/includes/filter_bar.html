@@ -16,6 +16,16 @@
 			<h2 class='button_label' ng-bind='this_button.label'></h2>
 		</div>
 	</div>
+	<input type='text' ng-model='potential_string_filter'>
+	<div class='filter_title'>
+		<button ng-class="{'trans_filter filter_by': true, 'pressed': !active_filters.string, 'unpressed': active_filters.string}" ng-click='toggle_string_button()'>
+		<span class='button_label'>By Above Text</span></button>
+	</div>
+	<div class='filter_title'>
+	<button ng-class="{'trans_filter filter_by': true, 'pressed': !active_filters.check_no, 'unpressed': active_filters.check_no}" ng-click='toggle_check_button()'>
+		<span class='button_label'>By Check #:</span>
+	</button>	
+	<input type='text' class='number_width' ng-model='potential_check_filter'>
 </div>
 <!--		<h3><button type='submit' ng-class="{'inverted': true, 'pressed': !collapsed_filter_options.unit}" ng-click='toggle_filter_options("unit")'><span ng-show='collapsed_filter_options.unit === true'> v </span><span ng-show='collapsed_filter_options.unit === false'> ^ </span></button></h3>
 		<h3>By Type <button type='submit' ng-class="{'inverted': true, 'pressed': !collapsed_filter_options.unit}" ng-click='toggle_filter_options("type")'><span ng-show='collapsed_filter_options.type === true'> v </span><span ng-show='collapsed_filter_options.type === false'> ^ </span></button></h3>-->

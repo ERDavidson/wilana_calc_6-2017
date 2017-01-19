@@ -7,6 +7,6 @@
     "mongoose": "latest",
    	"fs": "latest",
    	"bcryptjs": "latest",
-   	"n3-charts": "latest"
+   	"angular-nvd3": "latest"
   }
 }

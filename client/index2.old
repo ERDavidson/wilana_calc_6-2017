@@ -179,7 +179,7 @@
 		}
 		return factory;
 	}]);
-	myApp.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mortgageFactory', 'transactionFactory', 'userFactory', function($http, propertyTaxFactory, mortgageFactory, transactionFactory, userFactory){
+	myApp.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mortgageFactory', 'userFactory', function($http, propertyTaxFactory, mortgageFactory, userFactory){
 		var factory = {};
 		factory.index = function(callback){
 			$http.post('/budget_lines').success(function(new_index){
@@ -312,19 +312,6 @@
 				})
 			})
 		}
-		factory.get_recorded_incomes =  function(callback){
-			$http.post('/transactions').success(function(result){
-				var year_sums = {"2007": 0, "2008": 0, "2009": 0, "2010": 0, "2011": 0, "2012": 0, "2013": 0, "2014": 0, "2015": 0, "2016": 0};
-				for (i=0;i<result.index.length;i++){
-					if (result.index[i].type === "credit"){
-						var this_date = new Date(result.index[i].date);
-						var this_year = this_date.getFullYear();
-						year_sums[this_year] += (result.index[i].amount / 100);
-					}
-				}
-				callback({"incomes": year_sums});
-			})
-		}
 		return factory;
 	}]);
 	myApp.factory('feedbackFactory', ['$http', 'userFactory', function($http, userFactory){
@@ -357,21 +344,14 @@
 		return factory;
 	}]);
 	myApp.factory('filterFactory', ['$rootScope', function($rootScope){
-		var factory = {}; 
-		var current_filters = {"date": {"active": false, "more_than": "", "less_than": ""}, "amount": {"active": false, "more_than": null, "less_than": null}, "type": {"active": false, "values": []}, "string": {"active": false, "value": ""}, "check_no": {"active": false, "unit": []}};
+		var factory = {};
+		var current_filters = {};
 		factory.change_filter = function(filter_type, new_status){
 			current_filters[filter_type] = new_status;
 			$rootScope.$broadcast('filter_updated');
-			return current_filters;
 		}
 		factory.get_filters = function(){
-			var active_filters = {};
-			for (key in current_filters){
-				if (current_filters[key].active){
-					active_filters[key] = current_filters[key];
-				}
-			}
-			return active_filters;
+			return current_filters;
 		}
 		return factory;
 	}]);
@@ -491,13 +471,13 @@
 			var date_counter = new Date('01/01/2011');
 			var transactionified = [];
 			for (dues_index=0;dues_index<dues_list.length;dues_index++){
-				transactionified[dues_index] = {"_unit": {number: unit_number}, "unit": String(unit_number), "date": new Date(date_counter.setMonth(date_counter.getMonth() + 1)), "amount": (dues_list[dues_index]), "type": "dues", "notes": "", };
+				transactionified[dues_index] = {"_unit": {number: unit_number}, "date": new Date(date_counter.setMonth(date_counter.getMonth() + 1)), "amount": (dues_list[dues_index] * 100), "type": "dues", "notes": "", };
 			}
 			return transactionified;
 		}
 		factory.dues_as_transactions = [];
 		factory.transactionified_dues_index = function(callback){
-			console.log("about to transactionify dues for units " + unitFactory.unit_numbers[this_index('tell')] + " with a bound of " + months_to_date + " months.");
+			//console.log("about to transactionify dues for units " + unitFactory.unit_numbers);
 			for(i=0;i<unitFactory.unit_numbers.length;i++){
 				$http.post('/trim_matrix', {unit: unitFactory.unit_numbers[this_index('bump')], months: months_to_date}).success(function(matrix_result){
 					if (matrix_result.error){
@@ -707,6 +687,8 @@
 	}]);
 	myApp.factory('reportFactory', ['$http', '$filter', 'filterFactory', 'matrixFactory', 'unitFactory', 'transactionFactory', 'userFactory', function($http, $filter, filterFactory, matrixFactory, unitFactory, transactionFactory, userFactory){
 		var factory = {};
+		var transaction_index = [];
+		var transified_dues_index = [];
 		var all_dues = [];
 		var sum_transactions = function(transaction_list){
 			//console.log("reportFactory sum_transactions called with list of length " + transaction_list.length);
@@ -726,6 +708,23 @@
 		}
 		factory.filtered_transactions = [];
 
+		transactionFactory.index(function(data){
+			//console.log("Performing transaction index");
+			transaction_index = data.index;
+			matrixFactory.transactionified_dues_index(function(trans_dues_list){
+				//console.log("received transactionified dues list: " + JSON.stringify(trans_dues_list));
+				transified_dues_index = trans_dues_list;
+			})
+		})
+		/*
+		var re_filter = function(transaction_list){
+				console.log("In re_filter, starting with index size " + transaction_list.length + ".  Query will be: $filter('in_group')({'item_list':" + transaction_list + ", 'group': " + filterFactory.get('unit') + ", 'property': 'unit'}); ");
+				var once_filtered = $filter('in_group')({'item_list': transaction_list, 'group': filterFactory.get('unit'), 'property': 'unit'}); 
+				console.log("once_filtered has been reduced to " + once_filtered.length + " & will now be filtered by " + filterFactory.get('type'));
+				var re_filtered_transactions = $filter('in_group')({'item_list': once_filtered, 'group': filterFactory.get('type'), 'property': 'type'});
+				return re_filtered_transactions;
+		}
+		*/
 		factory.reference_health = function(callback){
 			var runaway_transactions = [];
 			var rejecting_units = [];
@@ -763,6 +762,48 @@
 				});
 			});
 		};
+		factory.update_report = function(reason, callback){
+			var transactions_and_dues_index = transaction_index.concat(transified_dues_index);  //this still needs its amounts /100 I think.
+			var factory_response = {};
+			if (filterFactory.filter_count > 0){
+				if (reason === "transaction_change"){
+					transactionFactory.index(function(data){
+						if (data.error){
+							callback(data);
+						} else {
+							transactions_and_dues_index = (data.index).concat(transified_dues_index);
+							console.log("reportFactory retrieved new base transaction_list after receiving notice of change. length: " + transactions_and_dues_index.length);
+							factory.filtered_transactions = re_filter(transactions_and_dues_index);
+							if (factory.filtered_transactions.length > 1000){
+								factory_response.message = String(factory.filtered_transactions.length) + " transactions meet your filter criteria.  Please modify your filters to be more restrictive.  Results will display once they number less than 1,000.";
+							} else {
+								var sum_result = sum_transactions(factory.filtered_transactions);
+								factory_response.sum = (sum_result.sum / 100);
+								factory_response.filtered_transactions = factory.filtered_transactions;
+							}
+						}
+						callback(factory_response);
+					})
+				} else {
+					console.log("Decided only a re-filter was necessary");
+					factory.filtered_transactions = re_filter(transactions_and_dues_index);
+					if (factory.filtered_transactions.length > 1000){
+						factory_response.message = String(factory.filtered_transactions.length) + " transactions meet your filter criteria.  Please modify your filters to be more restrictive.  Results will display once they number less than 1,000.";
+					} else {
+						var sum_result = sum_transactions(factory.filtered_transactions);
+						factory_response.sum = (sum_result / 100);
+						console.log("factory_response sums: " + JSON.stringify(factory_response.sums));
+						factory_response.filtered_transactions = factory.filtered_transactions;
+					}
+					callback(factory_response);
+				}
+			} else {
+				console.log("update_report decided there are no active filters and so returned an empty list");
+				factory_response.filtered_transactions = [];
+				callback(factory_response);
+			}
+
+		}
 		factory.balance_summary = function(callback){
 			var these_units = unitFactory.unit_numbers;
 			var these_balances = {};
@@ -846,42 +887,27 @@
 		}
 		return factory;
 	}]);
-	myApp.factory('transactionFactory', ['$http', 'matrixFactory', function($http, matrixFactory){
+	myApp.factory('transactionFactory', ['$http', function($http){
 		var factory = {};
-		var transaction_index = [];
-		var transactions_and_dues_index = [];
-		var index_by_unit = {};
 		factory.allowed_types = ['credit', 'assessment', 'late_fee', 'other_fee', 'dues'];
-		var format_transactions = function(these_transactions){
-			for (i=0;i<these_transactions.length;i++){
-				these_transactions[i].unit_string = String(these_transactions[i]._unit.number);
-				these_transactions[i].date = new Date(these_transactions[i].date);			
-			}
-			return these_transactions;	
-		}
-		var by_unit = function(these_transactions){
-			var response = {index_by_unit: {}};
-			for (i=0;i<these_transactions.length;i++){
-				if (!response.index_by_unit[these_transactions[i].unit_string]){
-					response.index_by_unit[these_transactions[i].unit_string] = [];
-				}
-				response.index_by_unit[these_transactions[i].unit_string].push(these_transactions[i]);			
-			}
-			return response;
-		}
 		factory.index = function(callback){
 			$http.post("/transactions").success(function(data){
-				transaction_index = format_transactions(data.index);
-				index_by_unit = by_unit(transaction_index);
-				matrixFactory.transactionified_dues_index(function(trans_dues_list){ //these arrive already formatted.
-					transactions_and_dues_index = transaction_index.concat(trans_dues_list);
-					callback({index: transaction_index, index_by_unit: index_by_unit, transactions_and_dues_index: transactions_and_dues_index});
-				})
+				var index_by_unit = {};
+				for (i=0;i<data.index.length;i++){
+					var this_transaction = data.index[i];
+					this_transaction.unit = this_transaction._unit.number;
+					var this_unit = String(this_transaction._unit.number);
+					//console.log("this transaction.date is a " + (typeof this_transaction.date) + " and contains " + this_transaction.date);
+					this_transaction.date = new Date(this_transaction.date);
+					//console.log("the new improved date: " + this_transaction.date);
+					if (!index_by_unit[this_unit]){
+						index_by_unit[this_unit] = [];
+					}
+					index_by_unit[this_unit].push(this_transaction);
+				}
+				callback({index: data.index, index_by_unit: index_by_unit});
 			})
 		}
-		factory.index(function(data){
-			console.log("did initial transaction index.  Not sure why");
-		})
 		factory.create_transactions = function(credit_chart, callback){  //see update_dues partial for formatting instructions
 			var transaction_count = 0;
 			var row_index = function(){
@@ -915,6 +941,7 @@
 					callback(data);
 				})
 			}
+			//console.log("# transactions: " + transaction_count);
 		}
 		factory.create_transaction = function(new_transaction, callback){
 			$http.post('/transactions/createOne', {new_transaction: new_transaction}).success(function(data){
@@ -926,6 +953,7 @@
 			//delete updated_transaction.unit;
 			//delete updated_transaction._id;
 			$http.post(update_path, {updated_transaction: updated_transaction}).success(function(data){
+				//console.log("Factory received what should be updated transaction from server: " + JSON.stringify(data));
 				callback(data);
 			})
 		}
@@ -1201,7 +1229,6 @@
 		$scope.show_these = {maintenance: false, new_line_form: false};
 		$scope.checked_all = false;
 		$scope.chart_data = {};
-		$scope.recorded_incomes = {};
 		$scope.expense_chart_options = {};
 		$scope.income_chart_options = {};
 		for (year=2007;year<=today.getFullYear();year++){
@@ -1257,9 +1284,6 @@
 				//$scope.income_chart_options =  {"axes":{"x":{"key":"year"}},"series": chart_series};
 				//console.log("final chart_options: " + JSON.stringify($scope.expense_chart_options));
 			}
-		})
-		expenditureFactory.get_recorded_incomes(function(result){
-			$scope.recorded_incomes = result.incomes;
 		})
 		$scope.toggle = function(element){
 			$scope.show_these[element] = !$scope.show_these[element];
@@ -1350,78 +1374,53 @@
 			})
 		}	
 	}]);
-	myApp.controller('filtersController', ['$scope', '$rootScope', '$filter', 'reportFactory', 'unitFactory', 'filterFactory', 'transactionFactory', function($scope, $rootScope, $filter, reportFactory, unitFactory, filterFactory, transactionFactory){
+	myApp.controller('filtersController', ['$scope', '$rootScope', '$filter', 'reportFactory', 'unitFactory', '3', 'transactionFactory', function($scope, $rootScope, $filter, reportFactory, unitFactory, filterFactory, transactionFactory, transactionFilter){
 		$scope.transaction_types = transactionFactory.allowed_types;
 		$scope.transaction_labels = [];
-		$scope.unit_buttons = [];
+		$scope.buttons = [];
 		$scope.allowed_units = {};
 		$scope.allowed_types = {};
 		$scope.collapsed_filter_options = {unit: true, type: true, date: true, amount: true};
-		var active_filters = filterFactory.get_filters();
-		var filter_values = {}; //I want to change filtering to these two things.  One for data entered into fields, and the other for which data to pay attentioon to.
-		var filter_activity = {};
 		unitFactory.numbers_index(function(data){
+			var previously_activated_filters = filterFactory.get();
 			$scope.unit_numbers = data.unit_numbers;
 			for (i=0;i<$scope.unit_numbers.length;i++){
-				var this_filter_activity = false;
-				if (active_filters.unit && active_filters.unit.indexOf($scope.unit_numbers[i]) != -1){
-					this_filter_activity = true;
+				var this_filter = false;
+				if (previously_activated_filters.unit && $scope.unit_numbers[i] in previously_activated_filters.unit){
+					this_filter = true;
 				}
-				$scope.unit_buttons.push({name: $scope.unit_numbers[i], label: $scope.unit_numbers[i], button_type: "unit", active: this_filter_activity});
+				$scope.buttons.push({name: $scope.unit_numbers[i], label: $scope.unit_numbers[i], screen: "unit", filter: this_filter});
 			}
 		})
 		$scope.type_buttons= [];
 		$scope.type_translations = {'dues': 'dues', 'credit': 'credits', 'late_fee': 'late fees', 'other_fee': 'other fees', 'assessment': 'assessments'};
 		for (i=0;i<$scope.transaction_types.length;i++){
-			var this_filter_activity = false;
-			if (active_filters.type && active_filters.type.indexOf($scope.transaction_types[i]) != -1){
-				this_filter_activity = true;
-			}
-			$scope.type_buttons.push({name: $scope.transaction_types[i], label: $scope.type_translations[$scope.transaction_types[i]], button_type: "type", active: this_filter_activity});
+			$scope.type_buttons.push({name: $scope.transaction_types[i], label: $scope.type_translations[$scope.transaction_types[i]], screen: "type", filter: false});
 		}
-		$scope.string_button = {name: "string", label: "By Above Text", type: "string", active: active_filters.string};
-		$scope.check_button = {name: "check_no", label: "By Above Check #", type: "check_no", active: active_filters.check_no};
 		$scope.new_filters = {};	
-		$scope.toggle_unit_button = function(clicked_button){ 
-			if (clicked_button.active === false){
-				active_filters.unit.push(clicked_button.name);
-			} else if (active_filters.unit.indexOf(clicked_button.name) != -1){
-				active_filters.unit.splice(active.filters.unit.indexOf(clicked_button.name), 1);
-			} else {
-				userFactory.log("error", "filtersController just tried to remove a unit filter that was neither inactive nor in use");
+		/*$scope.toggle_button = function(clicked_button){ //clicking a filter button triggers a complicated series of events:
+			// 	1) Relevant filter added/removed from master filter list in filterfactory.
+			//	2) filterFactoyry broadcasts that a filter has updated
+			//	3) TransactionsIndexController hears it and ordere an updated transaction list from report factoryh
+			//	4) update_report in reportFactory checks to make sure there are active filters.  If none, returns an empty list to view.
+			//	5) Otherwise it retrieves the full list of filters and orders them to be used by $filter and returns the filtered results to view.
+			//
+			if (clicked_button.filter === false){
+				//console.log("adding units, value: " + clicked_button.screen + ", " + clicked_button.label);
+				filterFactory.add_filter(clicked_button.screen, clicked_button.name);
+				//$scope.filtered_transactions = reportFactory.filtered_transactions;
+				//$scope.filtered_transactions = $filter('in_group')({'item_list': $scope.transaction_index, 'group': filterFactory.get(clicked_button.screen), 'property': clicked_button.screen}); 
+				//console.log("filtered transactions created & is length " + $scope.filtered_transactions.length);
+					//$evalAsync($scope.allowed_units[clicked_button.label] = true);
+			} else if (clicked_button.filter === true){
+				filterFactory.remove_filter(clicked_button.screen, clicked_button.name);
+				//$scope.filtered_transactions = reportFactory.filtered_transactions;
+				//$scope.filtered_transactions = $filter('in_group')({'item_list': $scope.transaction_index, 'group': filterFactory.get(clicked_button.screen), 'property': clicked_button.screen}); 
+				//console.log("filtered transactions created & is length " + $scope.filtered_transactions.length);
 			}
-			this_button.active = !this_button.active;
-			filterFactory.change_filter("unit", active_filters.unit);
-		}
-		$scope.toggle_type_button = function(clicked_button){ 
-			if (clicked_button.active === false){
-				active_filters.type.push(clicked_button.name);
-			} else if (active_filters.type.indexOf(clicked_button.name) != -1){
-				active_filters.type.splice(active.filters.type.indexOf(clicked_button.name), 1);
-			} else {
-				userFactory.log("error", "filtersController just tried to remove a type filter that was neither inactive nor in use");
-			}
-			this_button.active = !this_button.active;
-			filterFactory.change_filter("type", active_filters.type);
-		}		
-		$scope.toggle_string_button = function(clicked_button){ 
-			if (clicked_button.active === false){
-				active_filters.string = $scope.potential_string_filter;
-			} else {
-				active_filters.string = false;
-			}
-			$scope.string_button.active = !$scope.string_button.active;
-			filterFactory.change_filter("string", active_filters.string);
-		}		
-		$scope.toggle_check_button = function(clicked_button){ 
-			if (clicked_button.active === false){
-				active_filters.check_no = $scope.potential_check_filter;
-			} else {
-				active_filters.check_no = false;
-			}
-			$scope.check_button.active = !$scope.check_button.active;
-			filterFactory.change_filter("check_no", active_filters.check_no);
-		}
+			//console.log("about to change clicked_button.filter from " + clicked_button.filter + " to " + !clicked_button.filter);
+			clicked_button.filter = !clicked_button.filter;
+		}*/
 		$scope.toggle_filter_options = function(toggled_section){
 			$scope.collapsed_filter_options[toggled_section] = !$scope.collapsed_filter_options[toggled_section];
 		}
@@ -1530,7 +1529,8 @@
 		$scope.toggle_filter_options = function(toggled_section){
 			$scope.collapsed_filter_options[toggled_section] = !$scope.collapsed_filter_options[toggled_section];
 		}
-	}]);*/
+	}]);
+	*/
 	myApp.controller('matrixesController', ['$scope', 'matrixFactory', 'userFactory', function($scope, matrixFactory, userFactory){
 		$scope.dues_matrix = [];
 		$scope.month_labels = matrixFactory.count_months();
@@ -1737,11 +1737,10 @@
 			})
 		}
 	}]);
-	/*
-	myApp.controller('transactionsIndexController', ['$scope', '$filter', 'filterFactory', 'reportFactory', 'transactionFactory', 'userFactory', function($scope, $filter, filterFactory, reportFactory, transactionFactory, userFactory){
+	myApp.controller('transactionsIndexController', ['$scope', '$filter', 'reportFactory', 'transactionFactory', 'userFactory', function($scope, $filter, reportFactory, transactionFactory, userFactory){
 		$scope.edit_lock = {type: false, id: null};
 		$scope.updated_transaction = {};	
-		$scope.filters = filterFactory.get_filters();
+		$scope.filters = {unit: [7, 8], type: ""};
 		$scope.or_filter = function(this_column_value, criteria){ // criteria should be a single-key object with values as a list (i.e. {unit: [7,8]})
 			console.log("Or_filter called comparing " + JSON.stringify(this_column_value) + " with " + JSON.stringify(criteria));
 			var match = false;
@@ -1754,20 +1753,24 @@
 			}
 			return match;
 		}
-		
-		//	var my_filter = function(transaction, criteria){ var match = false; 
-		//	for(index=0;index<criteria[Object.keys(criteria)[0]].length;index++){ 
-		//	if (transaction[Object.keys(criteria)[0]] === criteria[Object.keys(criteria)[0]][index]){ match = true; console.log("I think " + transaction[Object.keys(criteria)[0]] + " equals " + criteria[Object.keys(criteria)[0]][index]);} else { console.log("I think " + transaction[Object.keys(criteria)[0]] + " does NOT equal " + criteria[Object.keys(criteria)[0]][index]); } } return match; }
-		
-		transactionFactory.index(function(factory_response){
-			$scope.factory_response = factory_response.transactions_and_dues_index; 
+		/*
+			var my_filter = function(transaction, criteria){ var match = false; 
+			for(index=0;index<criteria[Object.keys(criteria)[0]].length;index++){ 
+			if (transaction[Object.keys(criteria)[0]] === criteria[Object.keys(criteria)[0]][index]){ match = true; console.log("I think " + transaction[Object.keys(criteria)[0]] + " equals " + criteria[Object.keys(criteria)[0]][index]);} else { console.log("I think " + transaction[Object.keys(criteria)[0]] + " does NOT equal " + criteria[Object.keys(criteria)[0]][index]); } } return match; }
+		*/
+		reportFactory.update_report("transaction_change", function(factory_response){
+			$scope.factory_response = factory_response; // depending on context, this will be an object with any of these:  message: string, filtered_transactions: array, sums: {sum: Number, running_balances: list}
+			//console.log("controller has received final filterd transaction list: Here is the first: " + JSON.stringify($scope.filtered_transactions[0]));
 		});
 		$scope.allowed_types = transactionFactory.allowed_types;
 		$scope.date_for_sorting = transactionFactory.date_for_sorting;
 		//console.log('buttonscontroller f-t length is ' + $scope.filtered_transactions.length);
 		$scope.$on('filter_updated', function(){
 			//console.log("TransactionsIndex/ButtonsController heard about a filter update and is ordering an updated transaction list");
-			$scope.filters = filterFactory.get_filters();
+			reportFactory.update_report("filter_change", function(factory_response){
+				$scope.factory_response = factory_response; // depending on context, this will be an object with any of these:  message: string, filtered_transactions: array, sums: {sum: Number, running_balances: list}
+				//console.log("buttonsController has received an updated filtered transaction list, length: " + $scope.filtered_transactions.length);
+			});
 		})
 		$scope.sort_criterion = "-date";
 		var reverse_sort_strings = {
@@ -1816,8 +1819,8 @@
 					userFactory.log('error', "Update error: " + result.error);
 				} else {
 					userFactory.log("message", "Update completed.  About to refresh transactions.");
-					transactionFactory.index(function(factory_response){
-						$scope.factory_response = factory_response.transactions_and_dues_index; // depending on context, this will be an object with any of these:  message: string, filtered_transactions: array, sums: {sum: Number, running_balances: list}
+					reportFactory.update_report("transaction_change", function(factory_response){
+						$scope.factory_response = factory_response; // depending on context, this will be an object with any of these:  message: string, filtered_transactions: array, sums: {sum: Number, running_balances: list}
 						//console.log("controller has received final filterd transaction list: Here is the first: " + JSON.stringify($scope.filtered_transactions[0]));
 					});
 				}
@@ -1833,28 +1836,28 @@
 				if (result.error){
 					userFactory.log('error', "Error deleting transaction: " + result.error);
 				} else {
-					transactionFactory.index(function(factory_response){
-						$scope.factory_response = factory_response.transactions_and_dues_index;
+					reportFactory.update_report("transaction_change", function(factory_response){
+						$scope.factory_response = factory_response; // depending on context, this will be an object with any of these:  message: string, filtered_transactions: array, sums: {sum: Number, running_balances: list}
+						//console.log("controller has received final filterd transaction list: Here is the first: " + JSON.stringify($scope.filtered_transactions[0]));
 					});
 					$scope.edit_lock = {type: false, id: null};
 					userFactory.log('message', "Transaction deleted.  Server response: " + JSON.stringify(result.result));
 				}
 			})
 		}
-		//$scope.delete_transaction = function(this_transaction, this_unit){
-		//	transactionFactory.delete_one(this_transaction._id, function(result){
-		//		if (result.error){
-		//			userFactory.log('error', "Error deleting transaction: " + result.error);
-		//		} else {
-		//			var this_index = $scope.index_by_unit[this_unit].indexOf(this_transaction);
-		//			$scope.index_by_unit[this_unit].splice(this_index, 1);
-		//			$scope.edit_lock = {type: false, id: null};
-		//			userFactory.log('message', "Transaction deleted.  Server response: " + JSON.stringify(result.result));
-		//		}
-		//	})
-		//}
+		/*$scope.delete_transaction = function(this_transaction, this_unit){
+			transactionFactory.delete_one(this_transaction._id, function(result){
+				if (result.error){
+					userFactory.log('error', "Error deleting transaction: " + result.error);
+				} else {
+					var this_index = $scope.index_by_unit[this_unit].indexOf(this_transaction);
+					$scope.index_by_unit[this_unit].splice(this_index, 1);
+					$scope.edit_lock = {type: false, id: null};
+					userFactory.log('message', "Transaction deleted.  Server response: " + JSON.stringify(result.result));
+				}
+			})
+		}*/
 	}]);
-	*/
 	myApp.controller('transactionsNewController', ['$scope', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, transactionFactory, unitFactory, userFactory){
 		$scope.display_prep = {};
 		$scope.allowed_types = transactionFactory.allowed_types;

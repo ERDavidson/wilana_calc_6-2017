@@ -2,34 +2,36 @@ App to-do list
 
 Important stuff for tomorrow
 
-figure out n3 margins
+filters are mauled by at least two half-completed incompatible revisions
+figure out nvd3 margins
 figure how how to get google login to reliably appear
 make client-side view restrictions for login in general & for shareholder-users
 property tax for individual units
-revamp reports to look more like fancy_new_view
-consolidate views
+consolidate views / revamp reports to look more like fancy_new_view
 22's balance is fucked up
 link dues & assessment & fee income history to actual transactions
-GIT INIT
+figure out asynchrony and for loops
+21's transactions??
 
+replace re_filter and update_report and toggle-button and maybe filterv2controller
 
 
 minor tweaks
 
+clearer system for subviews - want to avoid someone clicking on an upper line link and wondering why nothing obvious happens
+remove cursor from button labels
 transaction searches sort weirdly with multiple filters clicking on and off
 also managed to see all of 5&22's credits & otherfees even though credits was not tapped.
 add date filter
-make date start sorted descending (newest first)
 Cut out old code
 review rem & directives & bootstrap
-add filtered sums to transaction index
+get dues to show up in filtered transactions & sum in transaction index
 double-check storage rental values for 5 & 22
 make server-side secure against creepy client shenanigans
 change running balances to have types
-feedback entry
+jeremy & zena pw issues
 user-specific privacy settings & notification signup
 deploy on amazon
-plumbing reimbursements followup
 make spending history work completely off of chart-formatted  data
 
 

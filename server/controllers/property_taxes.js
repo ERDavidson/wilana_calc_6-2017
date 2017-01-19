@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 var PropertyTax = mongoose.model('PropertyTax');
 module.exports = {
 	index: function(req,res){
-		PropertyTax.find({}, function(err, these_taxes){
+		PropertyTax.find({"year_paid": {$gt: 2006}}, function(err, these_taxes){
 			if (err){
 				res.json({error: "Error retrieving property tax index: " + err});
 			} else {
