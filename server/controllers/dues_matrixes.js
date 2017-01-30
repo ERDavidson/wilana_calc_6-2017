@@ -21,13 +21,13 @@ module.exports = {
 		})
 	},
 	trim_matrix: function(req,res){
-		//console.log("Retrieving dues matrix for unit " + req.body.unit);
+		//console.log("In Trim_matrix server method");
 		Dues_Matrix.findOne({}, function(err, these_dues){  //retrieves & returns the section of the dues matrix corresponding to a specified unit & time span.
 			if(err){										//since months are stored as # months-from-origin, a specific month is also an origin-to-date time span.
 				res.json({error: "Error retrieving dues matrix: " + err});
 			} else {
 				var response_list = [];
-				for (i=0; i<req.body.months; i++){ //it's easier to fill in null values while trimming list length instead of just trimming now and dealing with nulls later.
+				for (i=0; i<req.body.months; i++){ //it's easier to fill in null values while trimming list length instead of just trimming now and dealing with nulls later.;''
 					if (these_dues.rates[req.body.unit][i]){  //iterating through months 0 through x-1, if the dues chart offers a new dues rate...
 						response_list[i] = these_dues.rates[req.body.unit][i];
 					} else if (i===0){

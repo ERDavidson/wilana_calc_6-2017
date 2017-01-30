@@ -2,18 +2,43 @@ App to-do list
 
 Important stuff for tomorrow
 
-filters are mauled by at least two half-completed incompatible revisions
-figure out nvd3 margins
-figure how how to get google login to reliably appear
-make client-side view restrictions for login in general & for shareholder-users
-property tax for individual units
-consolidate views / revamp reports to look more like fancy_new_view
-22's balance is fucked up
-link dues & assessment & fee income history to actual transactions
-figure out asynchrony and for loops
-21's transactions??
 
-replace re_filter and update_report and toggle-button and maybe filterv2controller
+ 	<div ng-if='false'>
+https://accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=http%3A%2F%2Flocalhost:8000%2Floginresult&response_type=token&client_id=544028406258-p756lflvl7dqrap03ajh3kogfmc873pf.apps.googleusercontent.com
+</div>
+
+
+
+Property Tax view:
+make property tax for individual units match history / standardize algorithm
+
+Budget view
+- hardcode or make simple db.  Frills here will wait for later
+- one such frill:  past budgets
+- anothe frill:  How much of your dues will be funding what
+
+
+spending history issues
+-figure out nvd3 margins
+-link dues & assessment & fee income history to actual transactions
+-make spending categories togglable on graph
+
+
+implement google oauth
+	documents view
+	make client-side view restrictions for login in general & for shareholder-users
+
+filter issues
+-display of applied filters is so wide it forces main below options
+-shrink filter options
+-why 2 dues
+-multi-filtering is still terrible
+-I think object referencing is tying active filters to proposed & triggering digest just for clicking opition buttons
+-filter restore is bugged - I think because it iterates through the active filter, which is missing properties completely that it should be restoring
+
+data issues
+-22's balance is fucked up
+-21's transactions
 
 
 minor tweaks
@@ -23,16 +48,12 @@ remove cursor from button labels
 transaction searches sort weirdly with multiple filters clicking on and off
 also managed to see all of 5&22's credits & otherfees even though credits was not tapped.
 add date filter
-Cut out old code
-review rem & directives & bootstrap
 get dues to show up in filtered transactions & sum in transaction index
 double-check storage rental values for 5 & 22
-make server-side secure against creepy client shenanigans
 change running balances to have types
 jeremy & zena pw issues
 user-specific privacy settings & notification signup
 deploy on amazon
-make spending history work completely off of chart-formatted  data
 
 
 Wilana Task List			
@@ -42,13 +63,17 @@ January dues
 figure 2016 Prop Tax notice					
 Bob Oates bill investigation			
 Energy Star certification			
-2017 budget update & distribute			
 appeal prop tax.  Ideas:  inflation?  Indep appraisal?			
 correct John's shares			
 2016 financial report			
 wilana app			
 			
-			
+Coding Theory stuff
+
+asynchrony & for loops
+directives
+bootstrapping
+
 			
 			
 			

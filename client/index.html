@@ -30,40 +30,44 @@
 				templateUrl: './partials/matrix_show.html'
 			})
 			.when('/reports', {
-				templateUrl: './partials/reports.html'
+				templateUrl: './partials/reports.html',
+				controller: 'reportsController'
 			})
 			.when('/transactions/new', {
 				templateUrl: './partials/transactions_new.html'
 			})
 			.when('/transactions', {
-				templateUrl: './partials/transactions_index.html'
+				templateUrl: './partials/transactions_index.html',
+				controller: 'transactionsIndexController'
 			})
 			.when('/units', {
 				templateUrl: './partials/units_index_new_edit.html'
 			})
 			.when('/taxes', {
-				templateUrl: './partials/taxes.html'
+				templateUrl: './partials/taxes.html',
+				controller: 'taxesController'
 			})
 			.when('/mortgage', {
-				templateUrl: './partials/mortgage.html'
+				templateUrl: './partials/mortgage.html',
+				controller: 'mortgagesController'
 			})
 			.when('/feedback', {
-				templateUrl: './partials/feedback.html'
+				templateUrl: './partials/feedback.html',
+				controller: 'feedbacksController'
 			})
 			.when('/documents', {
-				templateUrl: './partials/documents.html'
+				templateUrl: './partials/documents.html',
+				controller: 'documentsController'
 			})
 			.when('/budget', {
 				templateUrl: './partials/budget.html'
 			})
 			.when('/spending_history', {
-				templateUrl: './partials/spending_history.html'
+				templateUrl: './partials/spending_history.html',
+				controller: 'expendituresController'
 			})
 			.when('/preferences', {
 				templateUrl: './partials/preferences.html'
-			})
-			.when('/shareholder_accounts', {
-				templateUrl: './partials/shareholder_accounts.html'
 			})
 			.otherwise({
 				redirectTo: '/partials/welcome.html'
@@ -119,6 +123,7 @@
 					factory.logged_in = true;
 					factory.current_user = result.unit;
 					factory.current_pw = credentials.pw;
+					factory.nav_topic = "unit_accounts";
 				}
 				callback(result);
 			})
@@ -135,10 +140,18 @@
 				}
 			})
 		}
+		factory.googlelogintest = function(callback){
+			$https.post('/accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=http%3A%2F%2Flocalhost:8000%2Floginresult&response_type=token&client_id=544028406258-p756lflvl7dqrap03ajh3kogfmc873pf.apps.googleusercontent.com').success(function(result){
+				//console.log(JSON.stringify(result));
+				callback(result);
+			})
+		}
 		factory.update_user = function(updated_user, callback){
-			updated_user.unit = factory.current_user;
+			if (!updated_user.unit){
+				updated_user.unit = factory.current_user;
+			}
 			updated_user.online = true;
-			var update_user_path = 'users/' + factory.current_user + '/update';
+			var update_user_path = 'users/' + updated_user.unit + '/update';
 			$http.post(update_user_path, {updated_user: updated_user}).success(function(result){
 				if (result.result){
 					factory.current_pw = updated_user.pw_hash;
@@ -179,13 +192,50 @@
 		}
 		return factory;
 	}]);
+	myApp.factory('balanceHistoryFactory', ['$http', 'userFactory', function($http, userFactory){
+		var factory = {};
+		factory.index = function(callback){
+			$http.post('/balance_histories').success(function(result){
+				if (result.error){
+					callback(result);
+				} else {
+					var desired_histories = {"Daily Wilana Checking": true, "Daily Wilana Reserve Fund": true, "Daily Wilana Blanket Mortgage": true};
+					var these_histories = [];
+					var these_colors = ["#3060cc", "#aaaa60", "#cc3060"];
+					for (index=0;index<result.history_index.length;index++){
+						if (desired_histories[result.history_index[index].account_name]){
+							var index_for_chart = {key: result.history_index[index].account_name, color: these_colors[index], values: []};
+							for (i=0;i<result.history_index[index].dates.length;i++){
+								var this_date = new Date(result.history_index[index].dates[i]);
+								var this_value = result.history_index[index].values[i];
+								index_for_chart.values.push([this_date, this_value]);
+							}
+							these_histories.push(index_for_chart);
+							console.log("Added history " + index_for_chart.key + " of length " + index_for_chart.values.length);
+						}
+					}
+					console.log("factory returning histories:");
+					console.log(these_histories);
+					callback({histories_for_chart: these_histories});
+				}
+			})
+		}
+		factory.create = function(new_history, callback){
+			console.log("new_history in factory:");
+			console.log(new_history);
+			$http.post('/balance_histories/create', new_history).success(function(result){
+				callback(result);
+			})
+		}
+		return factory;
+	}]);
 	myApp.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mortgageFactory', 'transactionFactory', 'userFactory', function($http, propertyTaxFactory, mortgageFactory, transactionFactory, userFactory){
 		var factory = {};
 		factory.index = function(callback){
 			$http.post('/budget_lines').success(function(new_index){
 				//console.log("factory received new spending history index: " + JSON.stringify(new_index));
-				var expenses_by_supercategory = {"Expense Totals": {}, "Taxes": {}, "Mortgage": {"Total": {}}, "Insurance": {}, "Utilities": {}, "Other": {}, "Maintenance": {"Total": {}}, "Income": {"Total": {}}};
-				var supercategory_key = {"Sewer": "Utilities", "Gas": "Utilities", "Garbage": "Utilities", "Water": "Utilities", "Electricity": "Utilities", "Water Meter": "Utilities", "Property Tax": "Taxes", "Income Tax": "Taxes", "Sr Citizen Prop Tax Refund": "Taxes", "Mortgage Principal": "Mortgage", "Mortgage Interest": "Mortgage", "Building Insurance": "Insurance"};
+				var expenses_by_supercategory = {"Expense Totals": {}, "Taxes": {}, "Mortgage": {"Total": {}}, "Insurance": {}, "Utilities": {}, "Other Expenses": {"Total": {}}, "Maintenance": {"Total": {}}, "Income": {"Total": {}}};
+				var supercategory_key = {"Sewer": "Utilities", "Gas": "Utilities", "Garbage": "Utilities", "Water": "Utilities", "Electricity": "Utilities", "Water Meter": "Utilities", "Property Tax": "Taxes", "Income Tax": "Taxes", "Sr Citizen Tax Refund": "Other Expenses", "Mortgage Principal": "Mortgage", "Mortgage Interest": "Mortgage", "Building Insurance": "Insurance", "Cleaning": "Other Expenses", "Building Supplies": "Other Expenses", "Garage Rent": "Other Expenses", "Tax Prep": "Other Expenses", "Legal Fees": "Other Expenses", "Fire Inspections": "Other Expenses", "Bank Charges": "Other Expenses", "Other Fees": "Other Expenses"};
 				var add_to_total = function(category_values, supercategory){
 					if ("Total" in expenses_by_supercategory[supercategory]){
 						for (this_year in category_values){
@@ -213,20 +263,38 @@
 				}
 				var expense_chart_data = [];
 				var income_chart_data = [];
-				var additional_data = {"maintenance_subcategories": [], "utilities_subcategories": []};
-				var maintenance_data = {"key": "Maintenance", "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0]]};
-				var utilities_data = {"key": "Utilities", "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0]]};
-				var utilities_categories = ["Sewer", "Gas", "Garbage", "Water", "Electricity", "WaterMeter"];
+				var additional_data = {"maintenance_subcategories": [], "utilities_subcategories": [], "other_expenses_subcategories": []};
+				var maintenance_data = {"key": "Maintenance", "color": "#cc7722", "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
+				var utilities_data = {"key": "Utilities", "color": "#bbbbbb", "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
+				var other_expenses_data =  {"key": "Other Expenses", "color": "#553322", "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
+				var utilities_categories = ["Sewer", "Gas", "Garbage", "Water", "Electricity", "Water Meter"];
+				var other_expenses_categories = ["Cleaning", "Building Supplies", "Garage Rent", "Tax Prep", "Legal Fees", "Fire Inspections", "Bank Charges", "Other Fees", "Sr Citizen Tax Refund"];
 				var utilities_divert = false;
+				var other_expenses_divert = false;
 				var maintenance_categories = [];
 				var maintenance_divert = false;
-				var years_to_show =  [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016];
-				expense_chart_data.push(propertyTaxFactory.brief_index.for_graph);
+				var years_to_show =  [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017];
+				//expense_chart_data[0] = {key: "Mortgage Total", values: []};  //really ugly, but budgeted value will be inserted later in this method and requires a known index to insert into.  And the rest of the mortgage data won't get inserted until it's in the controller.
+				expense_chart_data[0] = propertyTaxFactory.brief_index.for_chart; // this must have a fixed index so that insertion of current budget value knows where to go later on - no, not any more, but can't hurt
 				expenses_by_supercategory.Taxes["Property Tax"] = propertyTaxFactory.brief_index.for_table;
 				for (i=0;i<new_index.new_index.length;i++){
-					var this_category = new_index.new_index[i];		
+					var this_category = new_index.new_index[i];	
+					//if (this_category.category.search("Budget") != -1){
+					//	var budgeted_year = Object.keys(this_category.values)[0];
+					//	var budgeted_value = this_category.values[budgeted_year];
+					//	if ((this_category.category === "Property Tax Budget") && (expense_chart_data[0].values.indexOf([budgeted_year, budgeted_value]) === -1)){
+					//		expenses_by_supercategory.Taxes["Property Tax"][budgeted_year] = budgeted_value;
+					//		expense_chart_data[0].values.push([budgeted_year, budgeted_value]);  // prop tax indeex was the first thing added to this list 
+					//		console.log("added 2017 budget to property taxes for chart");
+					//	}
+					//} else {
 					var category_data = {"key": this_category.category, "values": []};
-					if (this_category.values){
+					if (category_data["key"] === "Income Tax"){
+						category_data["color"] = "#111111";
+					} else if (category_data["key"] === "Building Insurance"){
+						category_data["color"] = "#4444bb";
+					}
+					if (this_category.values){				//this_category is the db index item.  category_data is the output under construction
 						for  (index in years_to_show){
 							if (this_category.values[years_to_show[index]]){
 								if (this_category.is_maintenance){
@@ -236,6 +304,9 @@
 								} else if (utilities_categories.indexOf(this_category.category) != -1){
 									utilities_data.values[index][1] += this_category.values[years_to_show[index]];
 									utilities_divert = true;
+								} else if (other_expenses_categories.indexOf(this_category.category) != -1){
+									other_expenses_data.values[index][1] += this_category.values[years_to_show[index]];
+									other_expenses_divert = true;
 								}
 								category_data.values.push([years_to_show[index], this_category.values[years_to_show[index]]]);
 							} else {
@@ -251,17 +322,22 @@
 							} else if (utilities_divert){
 								additional_data.utilities_subcategories.push(category_data);
 								utilities_divert = false;
+							} else if (other_expenses_divert){
+								additional_data.other_expenses_subcategories.push(category_data);
+								other_expenses_divert = false;
 							} else {
 								expense_chart_data.push(category_data);	
 							}
 						}
+					//}
 					}
 				}
 				expense_chart_data.push(maintenance_data);
 				expense_chart_data.push(utilities_data);
-				console.log("constructed expense_chart_data & income_chart_data whose rows look like: " + JSON.stringify(expense_chart_data[0]));
+				console.log("constructed expense_chart_data & income_chart_data whose rows look like: ");
+				console.dir(expense_chart_data[0]);
 				//var index_for_chart = {income_categories: {}, expense_categories: {}};
-				for (i=0;i<new_index.new_index.length;i++){
+				for (i=0;i<new_index.new_index.length;i++){								
 					var this_category = new_index.new_index[i];
 					//console.log("this_category is " + JSON.stringify(this_category));
 					if (this_category.is_income === true){
@@ -347,9 +423,9 @@
 		}
 		factory.check_mail = function(){
 			factory.index(function(this_feedback){
-				console.log("in mail callback with " + this_feedback.feedback_index.length + "mails");
+				//console.log("in mail callback with " + this_feedback.feedback_index.length + "mails");
 				if (this_feedback.feedback_index && this_feedback.feedback_index.length > 0){
-					console.log("calling to userfact.log");
+					//console.log("calling to userfact.log");
 					userFactory.log("message", "You've got user feedback!");
 				}
 			})
@@ -357,111 +433,97 @@
 		return factory;
 	}]);
 	myApp.factory('filterFactory', ['$rootScope', function($rootScope){
-		var factory = {}; 
-		var current_filters = {"date": {"active": false, "more_than": "", "less_than": ""}, "amount": {"active": false, "more_than": null, "less_than": null}, "type": {"active": false, "values": []}, "string": {"active": false, "value": ""}, "check_no": {"active": false, "unit": []}};
-		factory.change_filter = function(filter_type, new_status){
-			current_filters[filter_type] = new_status;
-			$rootScope.$broadcast('filter_updated');
-			return current_filters;
-		}
-		factory.get_filters = function(){
-			var active_filters = {};
-			for (key in current_filters){
-				if (current_filters[key].active){
-					active_filters[key] = current_filters[key];
-				}
-			}
-			return active_filters;
-		}
-		return factory;
-	}]);
-	/*
-	myApp.factory('filterFactory', ['$rootScope', function($rootScope){
 		var factory = {};
-		var filters = {};
-		var filter_types = {};
-		var isEmpty = function(this_object) { 
-   			for (var x in this_object) { 
-   				return false; 
-   			}
-   			return true;
-   		}
-   		var broadcast_prep = function(action, this_filter, this_value, callback){
-   			if (action === "add"){
-   				filters[this_filter][this_value] = true;  //couldn't think of a way to add to hash if present or create hash if absent without at least one if statement
-				factory.filter_count += 1;
-				//console.log('filter ' + this_filter + ": " + this_value + " added to filter hash and filter_count is now " + factory.filter_count);
-   			} else if (action === 'remove'){
-				delete filters[this_filter][this_value];
-				factory.filter_count -= 1;
-				//console.log('filter ' + this_filter + ": " + this_value + " removed.");
-   			}
-   			callback(factory.filter_count);
-   		}
-   		factory.filter_count = 0;
-   		factory.get = function(this_filter){
-   			if (isEmpty(filters[this_filter])){
-   				//console.log("determined that " + this_filter + " in " + JSON.stringify(filters) + " is empty");
-   				return false;
-   			} else {
-   				//console.log("Returning populated filter: " + JSON.stringify(filters[this_filter]));
-   				return filters[this_filter];
-   			}
-   		}
-		factory.add_filter = function(this_filter, this_value){
-			if (!(this_filter in filters)){
-				//console.log("filterfactory is adding " + this_filter + " to " + JSON.stringify(filters));
-				filters[this_filter] = {};
-			}
-			console.log("About to start broadcast prep by adding" + this_value + ": true to " + this_filter + " in " + JSON.stringify(filters));
-			broadcast_prep("add", this_filter, this_value, function(filter_count){
-				console.log("In broadcast_prep callback.  filter_count is " + filter_count + " About to broadcast & return filter values.");
-				$rootScope.$broadcast('filter_updated');  // this was firing off and causing a transaction list update bfore filter_count could get incremented, so turned it into callback.
-			})
-			//console.log("add_filter is returning " + this_filter);
-			return factory.get(this_filter);
-		}
-		factory.remove_filter = function(this_filter, this_value){
-			broadcast_prep("remove", this_filter, this_value, function(filter_count){
-				console.log("In broadcast_prep callback.  filter_count is " + filter_count + "About to broadcast & return filter values or false");
-				$rootScope.$broadcast('filter_updated');
-				return factory.get(this_filter);
-			})
-		}
-		return factory;
-	}]);
-	*/
-	myApp.filter('in_group', function(){
-		console.log("ingroup filter called");
-		return function(parameters){   // parameters = {item_list: [x,y,z], group: [x,y]}  or {item_list: [{object}, {object}], group: {value: true, value: true}, property: 'unit_number'}
-			var filtered_list = [];
-			if (!parameters.group){
-				//console.log("Filter determined that there is no group, which would be the case if group were false.  Item List would have been " + parameters.item_list + " long.");
-				filtered_list = parameters.item_list;		// 2nd parameter will be "group: false" if that property is set to be unfiltered.  This is different from having no filters clicked, which would return []
-			} else {
-				for (i=0;i<parameters.item_list.length;i++){
-					if (!parameters.property){ // determines whether the input list is a regular array or an array of objects
-						//console.log("Filter is behaving as if it were given a list of items to filter instead of an object of them");
-						if (parameters.item_list[i] in parameters.group){
-							//console.log("Determined that parameters item list i: " + parameters.item_list[i] + " is in parameters group: " + parameters.group);
-							filtered_list.push(parameters.item_list[i]);
-						} else {
-							//console.log("Filter did not think this item was 'in' this group & so culled it.  Group: " + parameters.group + ", Item: " + JSON.stringify(parameters.item_list[i]));
+		var defaults = {unit: false, type: false, date: {greater_than: false, less_than: false}, amount: {greater_than: false, less_than: false}, check_no: "", string: ""};
+		function TransactionFilterSet(){
+			//console.log("creating a transactionfilterset");
+			this.unit = false;
+			this.type = false;
+			this.date = {greater_than: false, less_than: false};
+			this.amount = {greater_than: false, less_than: false};
+			this.check_no = "";
+			this.string = "";
+			this.mirror = function(original_filter_set){
+				for (key in original_filter_set){
+					if (key === 'date' || key === 'amount'){
+						this[key].greater_than = original_filter_set[key].greater_than;
+						this[key].less_than = original_filter_set[key].less_than;
+					} else if (key === "unit" || key === "type" ){
+						this[key] = [];
+						for (index in original_filter_set[key]){
+							this[key][index] = original_filter_set[key][index];
 						}
 					} else {
-						//console.log("filter is behaving as if it were given an object full of things to evaluate, not a list");
-						if (parameters.item_list[i][parameters.property] in parameters.group){
-							filtered_list.push(parameters.item_list[i]);
+						this[key] = original_filter_set[key];
+					}
+				}
+			}
+			this.activate = function(activation_target){ // this will by called by the proposed filter object targeting the active filter object
+				//console.log("this: "+ JSON.stringify(this));
+				for (key in this){
+					if ((key === "unit") || (key === "type")){
+						if (this[key] === []){
+							delete activation_target[key];
 						} else {
-							console.log("Filter determined that tem list [i]." + parameters.property + ", " + parameters.item_list[i][parameters.property] + " was not in " + JSON.stringify(parameters.group) + " and threw it away");
+							activation_target[key] = this[key];
+						}
+					} else if ((key === "check_no") || (key === "string")){
+						if (this[key] === ""){
+							delete activation_target[key];
+						} else {
+							activation_target[key] = this[key];
+						}
+					} else if ((key === "date") || (key === "amount")){
+						activation_target[key] = {};
+						for (nested_key in this[key]){
+							if (this[key][nested_key] != false){
+								activation_target[key][nested_key] = this[key][nested_key];
+							}
 						}
 					}
 				}
 			}
-			//console.log("filter is returning filtered_list, length " + filtered_list.length);
-			return filtered_list;
+			this.restore = function(restore_target){ //and this is for when you return to this view from somewhere else
+				//console.log("Restorer: " + JSON.stringify(this) + " and Restoree: " + JSON.stringify(restore_target));
+				var defaults = {unit: false, type: false, date: {greater_than: false, less_than: false}, amount: {greater_than: false, less_than: false}, check_no: "", string: ""};
+				for (key in defaults){
+					if ((key === "unit") || (key === "type")){
+						if (!this[key]){
+							restore_target[key] = defaults[key];
+						} else {
+							restore_target[key] = this[key];
+						}
+					} else if ((key === "check_no") || (key === "string")){
+						if (!this[key]){
+							restore_target[key] = defaults[key];
+						} else {
+							restore_target[key] = this[key];
+						}
+					} else if ((key === "date") || (key === "amount")){
+						restore_target[key] = {};
+						for (nested_key in defaults[key]){
+							if (!this[key][nested_key]){
+								restore_target[key][nested_key] = defaults[key][nested_key];
+							} else {
+								restore_target[key][nested_key] = this[key][nested_key];
+							}
+						}
+					}
+				}
+			}
+		};
+		factory.proposed_filters = new TransactionFilterSet();
+		factory.saved_filters = new TransactionFilterSet();
+		factory.placeholder_filters = new TransactionFilterSet(); //trying to get an object that will have the methods without triggering filter digest
+		for (key in defaults){
+			delete factory.placeholder_filters[key];
+			factory.placeholder_filters.date = {};
+			factory.placeholder_filters.amount = {};
 		}
-	});
+		var filters = {};
+		var filter_types = {};
+		return factory;
+	}]);
 	myApp.factory('matrixFactory', ['$http', 'unitFactory', 'userFactory', function($http, unitFactory, userFactory){
 		/*********
 		MATRIXFACTORY DOCS
@@ -487,27 +549,49 @@
 			}
 			return bump;  //remember:  "this_index" now contains the ****function**** bump, not its result. So this_index actually does take an argument. 
 		}();
+		var bump_tell_count = function(){  //for loop indexer slightly modified to be a unit-number iterator for times when it's just not worth the asynchrony trouble to do a server call.
+			var start_index = 0;
+			var bump = function(bump_tell_count){3
+				if (start_index > 29){
+					//console.log("Error: bump_tell_count is being forced to iterate too high");
+					return ({error: "No mure units to iterate"});
+				} else if (bump_tell_count == "tell" && start_index === 29){
+					//console.log("bump_tell_count has reached the last unit");
+					return ({finished: "bump_tell_count has finished iteration at unit " + start_index});
+				} else if (bump_tell_count == "tell"){
+					return (start_index);
+				} else if (bump_tell_count == "count"){
+					return 27;
+				} else if (bump_tell_count == "bump" && (start_index === 12 || start_index === 22)){
+					return (start_index += 2);
+				} else if (bump_tell_count == "bump" && (start_index === 29)){
+					return (start_index = 1);
+				} else if (bump_tell_count == "bump"){
+					return (start_index += 1);
+				}
+			}
+			return bump;
+		}();
 		var transactionify = function(dues_list, unit_number){
 			var date_counter = new Date('01/01/2011');
 			var transactionified = [];
 			for (dues_index=0;dues_index<dues_list.length;dues_index++){
-				transactionified[dues_index] = {"_unit": {number: unit_number}, "unit": String(unit_number), "date": new Date(date_counter.setMonth(date_counter.getMonth() + 1)), "amount": (dues_list[dues_index]), "type": "dues", "notes": "", };
+				transactionified[dues_index] = {"unit_number": Number(unit_number), "unit_string": String(unit_number), "date": new Date(date_counter.setMonth(date_counter.getMonth() + 1)), "amount": (dues_list[dues_index] * 100), "type": "dues", "notes": "", };
 			}
 			return transactionified;
 		}
 		factory.dues_as_transactions = [];
 		factory.transactionified_dues_index = function(callback){
-			console.log("about to transactionify dues for units " + unitFactory.unit_numbers[this_index('tell')] + " with a bound of " + months_to_date + " months.");
-			for(i=0;i<unitFactory.unit_numbers.length;i++){
-				$http.post('/trim_matrix', {unit: unitFactory.unit_numbers[this_index('bump')], months: months_to_date}).success(function(matrix_result){
+			//console.log("in transactionified_dues_index function in matrixfactory");
+			for(i=0;i<bump_tell_count("count");i++){
+				//console.log("about to transactionify dues for unit " + bump_tell_count('tell') + " with a bound of " + months_to_date + " months.");
+				$http.post('/trim_matrix', {unit: bump_tell_count("bump"), months: months_to_date}).success(function(matrix_result){
 					if (matrix_result.error){
 						userFactory.log({"error": matrix_result.error});
 					} else {
 						factory.dues_as_transactions = factory.dues_as_transactions.concat(transactionify(matrix_result.dues_list, matrix_result.unit));
-						//console.log("Added a unit's dues to dues_as_transactions.  First is " + JSON.stringify(factory.dues_as_transactions[0])+ " and #" + factory.dues_as_transactions.length + " is " + JSON.stringify(factory.dues_as_transactions[factory.dues_as_transactions.length - 1]));
 					}
-					if (this_index('tell') === unitFactory.unit_numbers.length - 1){
-						//console.log("Done transactionifying dues for " + (this_index('tell') + 1) + "units.");
+					if (bump_tell_count('tell').finished){
 						callback(factory.dues_as_transactions);
 					}
 				})
@@ -557,17 +641,16 @@
 	}]);
 	myApp.factory('mortgageFactory', ['$http', function($http){
 		var factory = {};
+		var today = new Date();
+		var origin_date = new Date('01/01/2007');
 		var add_running_balances = function(raw_mortgages){
-			//console.log("raw_mortgages: " + JSON.stringify(raw_mortgages));
-			if (!Array.isArray(raw_mortgages)){ //takes either a single mortgage or array of mortgages, adds a running balance column, and returns it as an areray for easy ng-repeating;
+			if (!Array.isArray(raw_mortgages)){ //takes either one mortgage or array of mortgages, adds a running balance column, and returns an array for easy ng-repeating;
 				raw_mortgages = [raw_mortgages];
 			}
 			//console.log("raw_mortgages: " + JSON.stringify(raw_mortgages));
-				for (i=0;i<raw_mortgages.length;i++){
+			for (i=0;i<raw_mortgages.length;i++){
 				raw_mortgages[i].running_balances = [];
 				raw_mortgages[i].initial_date = new Date(raw_mortgages[i].initial_date);
-				//console.log("raw_mortgages: " + JSON.stringify(raw_mortgages));
-				//console.log("Raw_mortgages[i].payments: " + raw_mortgages[i].payments);
 				for (payment_index=0;payment_index<raw_mortgages[i].payments.length;payment_index++){
 					if (payment_index === 0){
 						raw_mortgages[i].running_balances.push(raw_mortgages[i].initial_balance - raw_mortgages[i].payments[0].principal);
@@ -582,7 +665,7 @@
 						//console.log("Done iterating over payments.  Made these running balances: " + raw_mortgages[i].running_balances);
 						//console.log("add_running_balances is returning " + JSON.stringify(raw_mortgages));
 						return raw_mortgages;
-					}
+					}				
 				}
 			}
 		}
@@ -603,11 +686,98 @@
 				callback(data);
 			})
 		}
+		factory.index_by_year = function(callback){
+			var mortgage_index_by_year = {
+				"for_table": {
+					"Mortgage": {
+						"Principal": {"2017": 17721.63}, // list contents should be in format {year: amount}
+						"Interest": {"2017": 6051.69}, 
+						"Total": {"2017": 23773.32}
+					}
+				},
+				"for_chart": [{
+					"key": "Mortgage Principal", 
+					"color": "#668866",
+					"values": []  // this list's contents should be sub-lists instead: [year, amount]
+				}, {
+					"key": "Mortgage Interest",
+					"color": "#886666",
+					"values": []
+				}, {
+					"key": "Mortgage Total",
+					"color": "#666688",
+					"values": []
+				}]
+			};
+			$http.get("/mortgages/").success(function(result){
+				if (result.error){
+					callback(result)
+				} else {
+					console.log("initial mortgage_index in index_by_year method:");
+					console.dir(result.mortgage_index);
+					for (i=0;i<result.mortgage_index.length;i++){															//iterate through each mortgage in the index
+						for (payment_index=0;payment_index< result.mortgage_index[i].payments.length;payment_index++){		//iterate through that mortgage's payments
+							var this_payment = result.mortgage_index[i].payments[payment_index];
+						 	var payment_date = new Date(this_payment.pay_date);											//get the year of each payment
+						 	if ((payment_date >= new Date("01/01/2007")) && (payment_date <= new Date("12/31/2016"))){													//disregard payments made before 2007 as they cause chart rendering problems
+							 	var this_year = payment_date.getFullYear();
+							 	if (!mortgage_index_by_year.for_table.Mortgage.Total[this_year]){							//if the year is unfamiliar, initialize bins for its values to be incremented into
+								 	if (this_year === 2013){
+								 		mortgage_index_by_year.for_table.Mortgage.Principal[this_year] = -184296.6;					// manual entry of new loan principal - without it, payoff of key loan gives false impression of being a titanic expense
+							 			mortgage_index_by_year.for_table.Mortgage.Total[this_year] = -184296.6;
+								 	} else {
+							 			mortgage_index_by_year.for_table.Mortgage.Principal[this_year] = 0;
+								 		mortgage_index_by_year.for_table.Mortgage.Total[this_year] = 0;
+							 		}					
+							 		mortgage_index_by_year.for_table.Mortgage.Interest[this_year] = 0;
+							 	}
+							 	mortgage_index_by_year.for_table.Mortgage.Total[this_year] += (this_payment.principal / 100 + this_payment.interest / 100);  //increment the yearly table value by that amount
+							 	mortgage_index_by_year.for_table.Mortgage.Principal[this_year] += (this_payment.principal / 100);
+							 	mortgage_index_by_year.for_table.Mortgage.Interest[this_year] += (this_payment.interest / 100);
+							}
+						}
+					}
+					for (category_key in mortgage_index_by_year.for_table.Mortgage){										//and (hopefully when done), copy that yearly value over to chart data format too
+						for (year_key in mortgage_index_by_year.for_table.Mortgage[category_key]){
+							var this_yearly_amount = mortgage_index_by_year.for_table.Mortgage[category_key][year_key];
+							if (category_key === "Principal"){
+								mortgage_index_by_year.for_chart[0].values.push([year_key, this_yearly_amount]);
+							} else if (category_key === "Interest"){
+								mortgage_index_by_year.for_chart[1].values.push([year_key, this_yearly_amount]);
+							} else if (category_key === "Total"){
+								mortgage_index_by_year.for_chart[2].values.push([year_key, this_yearly_amount]);
+							}
+						}
+					}
+					console.log("thing I'm going to callback:");
+					console.dir(mortgage_index_by_year);
+					callback(mortgage_index_by_year);
+				}
+			})
+		}
 		return factory;
 	}]);
 	myApp.factory('propertyTaxFactory', ['$http', function($http){
 		var factory = {};
-		factory.brief_index = {for_graph: {category: "Property Tax", values: []}, for_table: {}};
+		factory.brief_index = {for_chart: {key: "Property Tax", color: "#ffffff", values: []}, for_table: {"Property Tax": []}};
+		//factory.index_briefly = function(callback){
+		//	$http.post('/property_taxes').success(function(result){
+		//		if (result.error){
+		//			callback(result);
+		//		} else {
+		//			for (year_index=0;year_index<result.prop_tax_index.length;year_index++){
+		//				var taxes_this_year = result.prop_tax_index[year_index];
+		//				factory.brief_index.for_chart.values.push([taxes_this_year.year_paid, (taxes_this_year.bill_main + taxes_this_year.bill_alt)]);
+		//				factory.brief_index.for_table["Property Tax"][year_index] = {};
+		//				factory.brief_index.for_table["Property Tax"][year_index][String(taxes_this_year.year_paid)] = (taxes_this_year.bill_main + taxes_this_year.bill_alt);
+		//			}
+		//		}
+		//	});
+		//}
+		//factory.index_briefly(function(this_index){
+		//	console.log("done constructing brief prop tax index for " + year_index + " years: ");
+		//	console.log(JSON.stringify(factory.brief_index));
+		//});
 		factory.index = function(callback){
 			$http.post('/property_taxes').success(function(result){
 				if (result.error){
@@ -615,10 +785,38 @@
 				} else {
 					var tax_year_keys = ["year_paid", "total", "bill_main", "land_val_main", "imp_val_main", "units_main", "per share", "tax_by_size", "bill_alt", "land_val_alt", "imp_val_alt", "units_alt", "unit_size_shares", "unit_size_numbers", "Actions"];
 					var grouped_by_attribute = {};
-					var tax_by_size = {"small": [], "medium": [], "large": []};
+					var tax_by_size = {"Sr Citizen": [], "small": [], "medium": [], "large": []};
+					var distribute_tax = function(unit_size_shares, total_shares, main_bill, sr_bill, unit_3){  // arguments should be 1) the unit_size_shares database response attribute, 2) 93000 for total shares (until our number of sr citizens changes), and 3) & 4) main_bill & sr_bill amounts pulled from database. Only include a 5th unit_3 argument if unit 3 failed to pay that year.  It takes the form {denominator: <26 or 27 or "shares">} depending on the year being calculated.
+						//console.log("in distribute_tax method, with arguments: unit_size_shares: " + JSON.stringify(unit_size_shares) + ", total_shares: " + total_shares + ", main_bill: " + main_bill + ", sr_bill: " + sr_bill + ", unit_3:" + JSON.stringify(unit_3));
+						var tax_classes = {
+							"Sr Citizen": {"base": sr_bill},
+							"small": {"base": (main_bill * unit_size_shares["small"] / total_shares)}, 
+							"medium": {"base": (main_bill * unit_size_shares["medium"] / total_shares)}, 
+							"large":{"base": (main_bill * unit_size_shares["large"] / total_shares)}};  
+						if (unit_3){
+							//console.log("in 'if unit_3' conditional statement");
+							if ((unit_3.denominator === 26) || (unit_3.denominator === 27)){  // here, the unit 3 tax burden is being divided equally among units.  27 is a historical error in year 2013
+								//console.log("In denominator 26 or 27 staemewnt, about to iterate through keys in " + JSON.stringify(tax_classes));
+								for (class_key in tax_classes){
+									tax_classes[class_key].unit_3_burden = (tax_classes["small"].base / unit_3.denominator);
+								}
+							} else if (unit_3.denominator === "shares"){ //here, the unit 3 tax burden is essentially being distributed by share, though we're doing it by pretending the unit doesn't exist.
+								var revised_shares = total_shares - unit_size_shares["small"]; //this should equal 90050 in 2013;
+								for (class_key in tax_classes){
+									if (class_key === "Sr Citizen"){
+										tax_classes[class_key].unit_3_burden = 0;
+									} else {
+										tax_classes[class_key].unit_3_burden = (main_bill * unit_size_shares[class_key] / revised_shares - tax_classes[class_key].base); //the tax was originally apportioned just using the first three terms without bothering with a separate burden value.  But this lets us compare it with other methods in the view more easily.
+									}
+								}
+							}
+						}
+						//console.log("distribute_tax is returning " + JSON.stringify(tax_classes));
+						return tax_classes;
+					}
 					for (attribute_index=0;attribute_index<tax_year_keys.length;attribute_index++){ //use first entry to figure out number of attributes per tax year & iterate that many times.
 						var attribute_data = [];
-						for (year_index=0;year_index<result.prop_tax_index.length;year_index++){
+						for (year_index=3;year_index<result.prop_tax_index.length;year_index++){ //starting in 2010 (*tax year index 3)
 							if (tax_year_keys[attribute_index] === "Actions"){
 								attribute_data.push(result.prop_tax_index[year_index]._id);
 							} else if (tax_year_keys[attribute_index] === "total"){
@@ -635,18 +833,44 @@
 								}
 							} else if (tax_year_keys[attribute_index] === "per share"){
 								var unit_sizes = ["small", "medium", "large"];
-								var total_main_shares = 0;
-								for (size_index in unit_sizes){
-									total_main_shares += (result.prop_tax_index[year_index].unit_size_shares[unit_sizes[size_index]] * result.prop_tax_index[year_index].units_main[unit_sizes[size_index]].length);  //# of units per size * # shares per size, iterated over 3 sizes
-								}
+								var total_main_shares = 93000; //this will need to be altered if our Sr Citizens ever change.
+								// The following lines were intended to manually count the total number of relevant shares each year.  This ran into trouble because "relevant" depends on context.  It's fine for calcing $/share, but in years where unit 3 is an add-on value, there is no $/share that is accurate for all units.  And it definitely doesn't work to use itr later on when figuring base values.
+								//console.log("Calculating total share count, starting at " + total_main_shares);
+								//for (size_index in unit_sizes){
+								//	total_main_shares += (result.prop_tax_index[year_index].unit_size_shares[unit_sizes[size_index]] * result.prop_tax_index[year_index].units_main[unit_sizes[size_index]].length);  //# of units per size * # shares per size, iterated over 3 sizes
+									//console.log("Added " + result.prop_tax_index[year_index].units_main[unit_sizes[size_index]].length + "units at " + result.prop_tax_index[year_index].unit_size_shares[unit_sizes[size_index]] + " shares per unit for a total of " + total_main_shares + " subtotal shares.");
+								//}
 								attribute_data.push(result.prop_tax_index[year_index].bill_main / total_main_shares);
 							} else if (tax_year_keys[attribute_index] === "tax_by_size"){
-								var this_datum = {};
-								for (size_index in unit_sizes){
-									tax_by_size[unit_sizes[size_index]].push(result.prop_tax_index[year_index].unit_size_shares[unit_sizes[size_index]] * grouped_by_attribute["per share"][year_index]);
+								if (year_index < 3){
+									for (class_key in tax_by_size){
+										tax_by_size[class_key].push({base: (result.prop_tax_index[year_index].bill_main + result.prop_tax_index[year_index].bill_alt) / 27});
+									}
+								} else if (year_index === 3){ // i.3. year =2010
+									for (class_key in tax_by_size){
+										if (class_key === "Sr Citizen"){
+											tax_by_size[class_key].push({base: result.prop_tax_index[year_index].bill_alt});
+										} else {
+											tax_by_size[class_key].push({base: (result.prop_tax_index[year_index].bill_main / 26)});
+										}
+									}
+								} else if (year_index > 3){ // year 2011+
+									var unit_3 = [false, false, false, false, false, false, {denominator: 27}, {denominator: "shares"}, {denominator: 26}];
+									if (!unit_3[year_index]){
+										unit_3[year_index] = false; //if it's after 2016, assume default parameters for unit 3
+									}
+									var this_tax_data = distribute_tax(result.prop_tax_index[year_index].unit_size_shares, total_main_shares, result.prop_tax_index[year_index].bill_main, result.prop_tax_index[year_index].bill_alt, unit_3[year_index]);
+									for (size_key in tax_by_size){
+										tax_by_size[size_key].push({base: this_tax_data[size_key].base});
+										//console.log(JSON.stringify(tax_by_size));
+										if (this_tax_data[size_key].unit_3_burden){
+											tax_by_size[size_key][tax_by_size[size_key].length-1].unit_3_burden = this_tax_data[size_key].unit_3_burden;
+										}
+									}
 								}
 							} else {
 								attribute_data.push(JSON.stringify(result.prop_tax_index[year_index][tax_year_keys[attribute_index]]));
+								//console.log("defaulted to adding " + JSON.stringify(result.prop_tax_index[year_index][tax_year_keys[attribute_index]]) + " to attribute data for attribute " + tax_year_keys[attribute_index]);
 							}
 						}
 						grouped_by_attribute[tax_year_keys[attribute_index]] = attribute_data;
@@ -657,29 +881,39 @@
 						"Total Tax": grouped_by_attribute.total,
 						"Primary Bill": grouped_by_attribute.bill_main,
 						"Unit 3 occupied?": grouped_by_attribute.units_main,
-						"Sr. Citizen Bill": grouped_by_attribute.bill_alt,
+						"Sr Citizen Bill": grouped_by_attribute.bill_alt,
 						"Tax per share": grouped_by_attribute['per share'],
+						"Sr Citizen Tax": tax_by_size["Sr Citizen"],
 						"Tax per small unit": tax_by_size["small"],
 						"Tax per medium unit": tax_by_size["medium"],
 						"Tax per large unit": tax_by_size["large"],
-						"Actions": grouped_by_attribute.Actions
+						"Actions": grouped_by_attribute.Actions,
+						"Main Improvement Value": grouped_by_attribute.imp_val_main,
+						"Main Land Value": grouped_by_attribute.land_val_main, 
+						"Sr Citizen Improvement Value": grouped_by_attribute.imp_val_alt,
+						"Sr Citizen Land Value": grouped_by_attribute.land_val_alt
 					};
 					//console.log("constructed this index_by_attribute: " + JSON.stringify(index_by_attribute));
-					var brief_index = {for_graph: {"key": "Property Tax", "values": []}, for_table: {}};
+					var brief_index = {for_chart: {"key": "Property Tax", "color": "#442222", "values": []}, for_table: {"2017": 47750}};
 					for (i=0;i<result.prop_tax_index.length;i++){
 						var this_total = result.prop_tax_index[i].bill_main;
 						if (result.prop_tax_index[i].bill_alt){
 							this_total += result.prop_tax_index[i].bill_alt;
 						}
-						brief_index.for_graph.values.push([result.prop_tax_index[i].year_paid, this_total]);
-						brief_index.for_table[result.prop_tax_index[i].year_paid] =  this_total;
+						brief_index.for_chart.values.push([result.prop_tax_index[i].year_paid, this_total]);
+						brief_index.for_table[result.prop_tax_index[i].year_paid] = this_total;
 					}
-					console.log("property tax factory brief index about to be published: " + JSON.stringify(brief_index));
-					factory.brief_index = brief_index;
-					callback({prop_tax_index: result.prop_tax_index, grouped_by_attribute: grouped_by_attribute, index_by_attribute: index_by_attribute});				
+					brief_index.for_chart.values[10] = [2017, 47750];
+					//console.log("property tax factory brief index about to be published: " + JSON.stringify(brief_index));
+					console.log("proptax brief index for chart:");
+					console.log(brief_index.for_chart);
+					callback({brief_index: brief_index, prop_tax_index: result.prop_tax_index, grouped_by_attribute: grouped_by_attribute, index_by_attribute: index_by_attribute});
 				}
 			})
-		}();
+		}
+		factory.index(function(result){
+			factory.brief_index = result.brief_index;  //holy shit it's ugly doing it this way, but the standalone brief_index method at the start of the factory doesn't seem to work.
+		});
 		factory.create_tax = function(tax_info, callback){
 			$http.post('/property_taxes/create', tax_info).success(function(result){
 				if (result.error){
@@ -705,11 +939,11 @@
 		}
 		return factory;
 	}]);
-	myApp.factory('reportFactory', ['$http', '$filter', 'filterFactory', 'matrixFactory', 'unitFactory', 'transactionFactory', 'userFactory', function($http, $filter, filterFactory, matrixFactory, unitFactory, transactionFactory, userFactory){
+	myApp.factory('reportFactory', ['$http', '$filter', 'matrixFactory', 'unitFactory', 'transactionFactory', 'userFactory', function($http, $filter, matrixFactory, unitFactory, transactionFactory, userFactory){
 		var factory = {};
 		var all_dues = [];
 		var sum_transactions = function(transaction_list){
-			//console.log("reportFactory sum_transactions called with list of length " + transaction_list.length);
+			console.log("reportFactory sum_transactions called with list of length " + transaction_list.length);
 			var sum = 0;
 			var running_balances = [];
 			for (this_index=0;this_index<transaction_list.length;this_index++){
@@ -721,7 +955,6 @@
 					running_balances.push(sum);
 				}
 			}
-			//console.log("its sum is " + sum);
 			return {sum: sum, running_balances: running_balances};
 		}
 		factory.filtered_transactions = [];
@@ -733,7 +966,6 @@
 				var sick_transaction_list = trans_data.index;
 				unitFactory.index({populate: false}, function(unit_data){
 					var sick_unit_list = unit_data.index;
-					//console.log("Commencing reference check on " + sick_unit_list.length + " units and " + sick_transaction_list.length + " transactions.");
 					var comparison_count = 0;
 					var this_unit = {};
 					var this_transaction = {};
@@ -775,28 +1007,6 @@
 				})
 			}
 		}
-		/*factory.balance_summary = function(callback){
-			unitFactory.numbers_index(function(unit_numbers_index){						 // get all unit numbers
-				if (unit_numbers_index.error){
-					callback(unit_numbers_index);
-				} else {
-					var these_units = unit_numbers_index.unit_numbers;
-					var these_balances = {};
-					for(i=0; i<these_units.length;i++){									//go through each one
-						factory.full_history(these_units[i], function(this_history){	//and determine its balance
-							these_balances[this_history.unit] = this_history.current_balance; //and add the balance to the index hash
-							//console.log("added a unit to balance summary.  Summary now has " + Object.keys(these_balances).length + " units.  Object: " + JSON.stringify(these_balances));
-							if (Object.keys(these_balances).length === unit_numbers_index.unit_numbers.length){  //and if we have as many balances as units, that means we're done, and should callback the result.
-								//console.log("returning balance summary to controller");
-								callback(these_balances);
-							} else {
-								//console.log("Chose not to return summary of length " + Object.keys(these_balances).length + " because it is less than " + unit_numbers_index.unit_numbers.length);
-							}
-						})
-					}
-				}
-			})
-		}*/
 		factory.full_history = function(unit, callback){
 			var today = new Date();
 			var months = (today.getFullYear() - 2011) * 12 + today.getMonth() + 1;
@@ -853,7 +1063,9 @@
 		var index_by_unit = {};
 		factory.allowed_types = ['credit', 'assessment', 'late_fee', 'other_fee', 'dues'];
 		var format_transactions = function(these_transactions){
+			//console.log("in transactionfactory format_transactions, about to format " + these_transactions.length + " items");
 			for (i=0;i<these_transactions.length;i++){
+				these_transactions[i].unit_number = these_transactions[i]._unit.number;
 				these_transactions[i].unit_string = String(these_transactions[i]._unit.number);
 				these_transactions[i].date = new Date(these_transactions[i].date);			
 			}
@@ -875,13 +1087,11 @@
 				index_by_unit = by_unit(transaction_index);
 				matrixFactory.transactionified_dues_index(function(trans_dues_list){ //these arrive already formatted.
 					transactions_and_dues_index = transaction_index.concat(trans_dues_list);
+					//console.log("sample transaction in transactions_and_dues: " + JSON.stringify(transactions_and_dues_index[5]));
 					callback({index: transaction_index, index_by_unit: index_by_unit, transactions_and_dues_index: transactions_and_dues_index});
 				})
 			})
 		}
-		factory.index(function(data){
-			console.log("did initial transaction index.  Not sure why");
-		})
 		factory.create_transactions = function(credit_chart, callback){  //see update_dues partial for formatting instructions
 			var transaction_count = 0;
 			var row_index = function(){
@@ -906,7 +1116,6 @@
 					if (credit_chart[row][col].amount === 0 || !credit_chart[row][col].amount){
 						credit_chart[row].splice(col, 1);
 						date_list_for_chopping.splice(col, 1);
-						//console.log("Spliced out credit_chart coordinates " + row + ", " + col);
 						col -= 1;
 					}
 				}
@@ -968,6 +1177,7 @@
 			} else {
 				for (i=0; i<data.unit_numbers.length; i++){
 					factory.unit_numbers.push(data.unit_numbers[i].number);  // the raw server feedback contains _ids that don't need to be public.
+					//console.log("finished preloading unitfactory unitnumbers");  //this has turned out to be of doubtful usefulness
 				}
 			}
 		});
@@ -1023,8 +1233,7 @@
 			});
 		}
 		return factory;
-	}]);
-	
+	}]);	
 	myApp.controller('appController', ['$scope', '$rootScope', '$location', 'userFactory', 'reportFactory', 'transactionFactory', 'feedbackFactory', function($scope, $rootScope, $location, userFactory, reportFactory, transactionFactory, feedbackFactory){	
 		//console.log("loading appController");
 		$scope.current_user = userFactory.current_user;
@@ -1063,7 +1272,6 @@
 			'/budget': "Current Budget",
 			'/spending_history': "Coop Spending History",
 			'/preferences': "User Preferences & Email Reminder Signup",
-			'/shareholder_accounts': "Shareholder Accounts"
 		};
 		$scope.this_page_title = $scope.page_titles[$location.url()];
 		$scope.location = $location.url();
@@ -1090,30 +1298,10 @@
 		$scope.new_nav_topic = function(nav_topic){
 			userFactory.nav_topic = nav_topic;
 			$scope.nav_topic = userFactory.nav_topic;
+			//console.log("new nav topic: " + nav_topic);
 		}
 		$scope.refresh_log = function(){
 			$scope.$evalAsync(userFactory.log());
-		}
-		$scope.unit_transaction_reference_health = function(){
-			reportFactory.reference_health(function(result){
-				if (result === "ok"){
-					userFactory.log('message', "Unit & Transaction references look perfect.");
-				} else {
-					//console.log(JSON.stringify(result));
-					if (result.runaway_transactions.length > 0){
-						userFactory.log('error', "" + result.runaway_transactions.length + ' transactions believe themselves owned by a different unit.  See list in console.');
-						for (i=0;i<result.runaway_transactions.length;i++){
-							//console.log('Transaction: ' + JSON.stringify(result.runaway_transactions[i].transaction) + " and claimant, unit " + result.runaway_transactions[i].unit_number);
-						}
-					}
-					if (result.rejecting_units.length > 0){
-						userFactory.log('error', "" + result.rejecting_units.length + ' units reject clinging transactions.  See list in console.');
-						for (i=0;i<result.runaway_transactions.length;i++){
-							//console.log('Unit: ' + JSON.stringify(result.rejecting_units[i].unit) + " and clingant, transaction " + JSON.stringify(result.rejecting_units[i].transaction));			
-						}
-					}
-				}
-			})
 		}
 		$scope.register = function(user_info){
 			userFactory.register(user_info, function(result){
@@ -1121,7 +1309,8 @@
 					userFactory.log('error', "Error registering new user: " + result.error);
 				} else {
 					userFactory.log('message', "Registration completed.");
-					$location.url('/login');
+					$location.url('/reports');
+
 				}
 			})
 		}
@@ -1134,12 +1323,17 @@
 					$scope.current_user = userFactory.current_user;
 					$scope.admin = userFactory.admin;
 					if ($scope.admin){
-						console.log("checking mail");
+						//console.log("checking mail");
 						feedbackFactory.check_mail();
 					}
 					userFactory.log('message', "Login completed.");
-					$location.url('/units');
+					$location.url('/reports');
 				}
+			})
+		}
+		$scope.googlelogintest = function(){
+			userFactory.googlelogintest(function(result){
+				//console.log(result);
 			})
 		}
 		$scope.load_gin = function(){
@@ -1180,7 +1374,7 @@
 			})
 		}
 		$scope.update_user = function(){
-			//console.log("in user factory, about to update password");
+			//console.log("in user controller, about to update password: " + JSON.stringify($scope.updated_user));;
 			userFactory.update_user($scope.updated_user, function(result){
 				if (result.error){
 					userFactory.log('error', "Error updating user: " + result.error);
@@ -1192,8 +1386,19 @@
 			})
 		}
 	}]);
-	myApp.controller('expendituresController', ['$scope', 'expenditureFactory', 'userFactory', function($scope, expenditureFactory, userFactory){
+	myApp.controller('documentsController', ['$scope', "userFactory", function($scope, userFactory){
+		$scope.current_user = userFactory.current_user;
+		$scope.admin = userFactory.admin;
+		$scope.library_info = {"prof_services": {label: "Professionals familiar with the Wilana", tooltip_info: "Plumbers, washing machine service hotline, etc.", show: true},  "links": {label: "Helpful IRS links", tooltip_info: "updated for tax year 2016", show: true}, "governing_docs": {label: "Wilana Governing Documents", tooltip_info: "not yet implemented", show: false}, "minutes": {label: "Meeting  Minutes", tooltip_info: "not yet implemented", show: false}};
+		$scope.toggle_library = function(library_section_key){
+			//console.log("library button clicked: " + library_section_key);
+			$scope.library_info[library_section_key].show = !($scope.library_info[library_section_key].show);
+		}
+	}]);
+	myApp.controller('expendituresController', ['$scope', 'expenditureFactory', 'balanceHistoryFactory', 'mortgageFactory', 'userFactory', function($scope, expenditureFactory, balanceHistoryFactory, mortgageFactory, userFactory){
 		var today = new Date();
+		var heard_from = {"mortgageFactory": false, "expenditureFactory": false};
+		var partial_expense_data = [];
 		$scope.admin = userFactory.admin;
 		$scope.new_line = {};
 		$scope.these_years = {}; 
@@ -1204,6 +1409,10 @@
 		$scope.recorded_incomes = {};
 		$scope.expense_chart_options = {};
 		$scope.income_chart_options = {};
+		$scope.expense_chart_data = [];
+		$scope.income_chart_data = [];
+		$scope.new_balance_history = {};
+		$scope.balance_histories_data = [];
 		for (year=2007;year<=today.getFullYear();year++){
 			$scope.these_years[year] = {};
 		}
@@ -1211,36 +1420,49 @@
 			if (new_index.error){
 				userFactory.log("error", "Error retrieving spending history index.");
 			} else {
+				partial_expense_data = partial_expense_data.concat(new_index.expense_chart_data);
+				if (heard_from["mortgageFactory"] === true){				//this is a convoluted attempt to get the chart to render correctly, since I'm having difficulty getting sequentially added data compiled correctly.   if mortgagefactory has reported, we need to collect its data before overwriting scope objects
+					//$scope.supercategory_index.Mortgage.Total["2017"] = new_index.by_supercategory.Mortgage.Total["2017"];
+					//new_index.by_supercategory.Mortgage.Total = $scope.supercategory_index.Mortgage.Total;
+					//new_index.expense_chart_data[0].values = new_index.expense_chart_data[0].values.concat(partial_expense_data[2].values) //add budgeted mortgage total to pre-arrived mortgage history
+					//the above is an attempt to bring budgeted mortgage total into expense chart format. But chart does not yet support mortgage totals, and that seems low priority - FAR easier to just budget for interest & principal
+					console.log("heard from mortgage factory first");
+					$scope.expense_chart_data = partial_expense_data;
+				}
 				$scope.supercategory_index = new_index.by_supercategory;
-				$scope.expense_chart_data = new_index.expense_chart_data;
-				$scope.income_chart_data = new_index.income_chart_data;
-				console.log("Lots of indexes:  Supercat, expense_chart, income_chart: " + JSON.stringify(new_index));
+				heard_from["expenditureFactory"] = true;
+				$scope.income_chart_data = $scope.income_chart_data.concat(new_index.income_chart_data);
+				console.log("Lots of indexes:  Supercat, expense_chart, income_chart: ");
+				console.log(new_index);
 				$scope.chart_options = {
 					'chart': {
 						"type": 'stackedAreaChart',
 						"height": 450, 
 						"margin": {
 							top: 20,
-							right: 20,
+							right: 60,
 							bottom: 30,
-							left: 40
+							left: 120
 						},
 						"x": function(d){return d[0];},
 						"y": function(d){return d[1];},
 						"useVoronoi": false,
 						"clipEdge": true,
-						"duration": 100,
+						"duration": 400,
 						useInteractiveGuideline: true,
 						xAxis: {
 							showMaxMin: false,
 							tickFormat: function(d){
+								if (d === 2017){
+									d = "Budget " + String(d);
+								}
 								return (d);
 								//return d3.time.format('%x')(new Date(d))
 							}
 						},
 						yAxis: {
 							tickFormat: function(d){
-								return d3.format(',.2f')(d);
+								return ("$" + d3.format(',.2f')(d));
 							}
 						},
 						zoom: {
@@ -1260,6 +1482,100 @@
 		})
 		expenditureFactory.get_recorded_incomes(function(result){
 			$scope.recorded_incomes = result.incomes;
+		})
+		mortgageFactory.index_by_year(function(result){
+			//$scope.expense_chart_data.push(result.for_chart[0]);
+			//$scope.expense_chart_data.push(result.for_chart[1]); //   this leaves off total for now
+			partial_expense_data = partial_expense_data.concat(result.for_chart.slice(0,2)); 
+			heard_from["mortgageFactory"] = true;
+			if (heard_from["expenditureFactory"] === true){
+				console.log("Heard from expense factory first");
+				$scope.expense_chart_data = partial_expense_data;
+			}
+			$scope.supercategory_index.Mortgage = result.for_table.Mortgage;  //then you can overwrite the carrier of the budgeted value.
+			console.log("Done adding mortgage to expense data:");
+			console.log(partial_expense_data);
+
+		})
+		balanceHistoryFactory.index(function(these_histories){
+			if (these_histories.error){
+				userFactory.log("error", "Error retrieving balance history index");
+			} else {
+				$scope.balance_histories_data = these_histories.histories_for_chart;
+				$scope.balance_histories_options = {
+					"chart": {
+						"type": "stackedAreaChart",
+						"height": 450,
+						"margin": {
+							"top": 20,
+							"right": 20,
+							"bottom": 30,
+							"left": 40
+						},
+						"useVoronoi": false,
+						"clipEdge": true,
+						"duration": 100,
+						"useInteractiveGuideline": true,
+						"xAxis": {
+							"showMaxMin": false
+						},
+						"yAxis": {},
+						"zoom": {
+							"enabled": true,
+							"scaleExtent": [
+								1,
+								10
+							],
+							"useFixedDomain": false,
+							"useNiceScale": false,
+							"horizontalOff": false,
+							"verticalOff": true,
+							"unzoomEventType": "dblclick.zoom"
+						}
+					}
+				/*{
+					'chart': {
+						"type": 'stackedAreaChart',
+						"height": 200, 
+						"margin": {
+							top: 20,
+							right: 60,
+							bottom: 30,
+							left: 120
+						},
+						"x": function(d){return d[0];},
+						"y": function(d){return d[1];},
+						"useVoronoi": false,
+						"clipEdge": true,
+						"duration": 400,
+						useInteractiveGuideline: true,
+						xAxis: {
+							showMaxMin: false,
+							tickFormat: function(d){
+								return d3.time.format('%x')(new Date(d))
+							}
+						},
+						yAxis: {
+							tickFormat: function(d){
+								return ("$" + d3.format(',.2f')(d));
+							}
+						},
+						zoom: {
+							enabled: false,
+							scaleExtent: [1,10],
+							useFixedDomain: false,
+							useNiceScale: false,
+							horiontalOff: false,
+							verticalOff: true,
+							unzoomEventType: 'dblclick.zoom'
+						}
+					}*/
+				};
+				console.log("balance histories options:");
+				console.log($scope.balance_histories_options);
+				console.log("balance histories data:");
+				console.log($scope.balance_histories_data);
+			}
 		})
 		$scope.toggle = function(element){
 			$scope.show_these[element] = !$scope.show_these[element];
@@ -1306,6 +1622,20 @@
 				})
 			}
 		}
+		$scope.create_balance_history = function(this_new_history){
+			this_new_history.dates = this_new_history.dates.split('\n');
+			this_new_history.values = this_new_history.values.split('\n');
+			if ((this_new_history.dates.length === this_new_history.values.length) && (this_new_history.dates.length > 0)){
+				balanceHistoryFactory.create(this_new_history, function(result){
+					if (result.error){
+						userFactory.log("error", "Error creating balance history: " + result.error);
+					} else {
+						userFactory.log("message", "Balance history created with no errors detected.");
+						$scope.new_balance_history = {};
+					}
+				})
+			} 
+		}
 	}]);
 	myApp.controller('feedbacksController', ['$scope', 'feedbackFactory', 'userFactory', 'unitFactory', function($scope, feedbackFactory, userFactory, unitFactory){
 		$scope.current_user = userFactory.current_user;
@@ -1350,187 +1680,6 @@
 			})
 		}	
 	}]);
-	myApp.controller('filtersController', ['$scope', '$rootScope', '$filter', 'reportFactory', 'unitFactory', 'filterFactory', 'transactionFactory', function($scope, $rootScope, $filter, reportFactory, unitFactory, filterFactory, transactionFactory){
-		$scope.transaction_types = transactionFactory.allowed_types;
-		$scope.transaction_labels = [];
-		$scope.unit_buttons = [];
-		$scope.allowed_units = {};
-		$scope.allowed_types = {};
-		$scope.collapsed_filter_options = {unit: true, type: true, date: true, amount: true};
-		var active_filters = filterFactory.get_filters();
-		var filter_values = {}; //I want to change filtering to these two things.  One for data entered into fields, and the other for which data to pay attentioon to.
-		var filter_activity = {};
-		unitFactory.numbers_index(function(data){
-			$scope.unit_numbers = data.unit_numbers;
-			for (i=0;i<$scope.unit_numbers.length;i++){
-				var this_filter_activity = false;
-				if (active_filters.unit && active_filters.unit.indexOf($scope.unit_numbers[i]) != -1){
-					this_filter_activity = true;
-				}
-				$scope.unit_buttons.push({name: $scope.unit_numbers[i], label: $scope.unit_numbers[i], button_type: "unit", active: this_filter_activity});
-			}
-		})
-		$scope.type_buttons= [];
-		$scope.type_translations = {'dues': 'dues', 'credit': 'credits', 'late_fee': 'late fees', 'other_fee': 'other fees', 'assessment': 'assessments'};
-		for (i=0;i<$scope.transaction_types.length;i++){
-			var this_filter_activity = false;
-			if (active_filters.type && active_filters.type.indexOf($scope.transaction_types[i]) != -1){
-				this_filter_activity = true;
-			}
-			$scope.type_buttons.push({name: $scope.transaction_types[i], label: $scope.type_translations[$scope.transaction_types[i]], button_type: "type", active: this_filter_activity});
-		}
-		$scope.string_button = {name: "string", label: "By Above Text", type: "string", active: active_filters.string};
-		$scope.check_button = {name: "check_no", label: "By Above Check #", type: "check_no", active: active_filters.check_no};
-		$scope.new_filters = {};	
-		$scope.toggle_unit_button = function(clicked_button){ 
-			if (clicked_button.active === false){
-				active_filters.unit.push(clicked_button.name);
-			} else if (active_filters.unit.indexOf(clicked_button.name) != -1){
-				active_filters.unit.splice(active.filters.unit.indexOf(clicked_button.name), 1);
-			} else {
-				userFactory.log("error", "filtersController just tried to remove a unit filter that was neither inactive nor in use");
-			}
-			this_button.active = !this_button.active;
-			filterFactory.change_filter("unit", active_filters.unit);
-		}
-		$scope.toggle_type_button = function(clicked_button){ 
-			if (clicked_button.active === false){
-				active_filters.type.push(clicked_button.name);
-			} else if (active_filters.type.indexOf(clicked_button.name) != -1){
-				active_filters.type.splice(active.filters.type.indexOf(clicked_button.name), 1);
-			} else {
-				userFactory.log("error", "filtersController just tried to remove a type filter that was neither inactive nor in use");
-			}
-			this_button.active = !this_button.active;
-			filterFactory.change_filter("type", active_filters.type);
-		}		
-		$scope.toggle_string_button = function(clicked_button){ 
-			if (clicked_button.active === false){
-				active_filters.string = $scope.potential_string_filter;
-			} else {
-				active_filters.string = false;
-			}
-			$scope.string_button.active = !$scope.string_button.active;
-			filterFactory.change_filter("string", active_filters.string);
-		}		
-		$scope.toggle_check_button = function(clicked_button){ 
-			if (clicked_button.active === false){
-				active_filters.check_no = $scope.potential_check_filter;
-			} else {
-				active_filters.check_no = false;
-			}
-			$scope.check_button.active = !$scope.check_button.active;
-			filterFactory.change_filter("check_no", active_filters.check_no);
-		}
-		$scope.toggle_filter_options = function(toggled_section){
-			$scope.collapsed_filter_options[toggled_section] = !$scope.collapsed_filter_options[toggled_section];
-		}
-	}]);
-	myApp.controller('matrixesController', ['$scope', 'matrixFactory', 'userFactory', function($scope, matrixFactory, userFactory){
-		$scope.dues_matrix = [];
-		$scope.month_labels = matrixFactory.count_months();
-		$scope.dues_matrix = {};
-		matrixFactory.index(function(data){
-			if (data.error){
-				userFactory.log('error', "Error retrieving dues rates: " + data.error);
-			} else {
-				$scope.dues_matrix = data;
-				userFactory.log('message', 'Dues rate matrix loaded.');
-			}
-		})
-	}]);
-	/*myApp.controller('filters_v2Controller', [
-		'$scope', 
-		'$rootScope', 
-		'$filter', 
-		'reportFactory', 
-		'unitFactory', 
-		'userFactory',
-		'filterFactory', 
-		'transactionFactory', 
-		function($scope, $rootScope, $filter, reportFactory, unitFactory, userFactory, filterFactory, transactionFactory, transactionFilter){
-		$scope.transaction_types = transactionFactory.allowed_types;
-		$scope.admin = userFactory.admin;
-		$scope.current_user = userFactory.current_user;
-		$scope.transaction_labels = [];
-		$scope.buttons = [];
-		$scope.allowed_units = {};
-		$scope.allowed_types = {};
-		$scope.info_by_unit ={};
-		$scope.collapsed_filter_options = {unit: true, type: true, date: true, amount: true};
-		reportFactory.balance_summary(function(result){
-			if (result.error){
-				userFactory.log('error', "Error retrieving balances summary: " + result.error);
-			} else {
-				$scope.balance_summary = result; // has format {<unit_number>: <balance>, <unit_number>: <balance>}
-				userFactory.log('message', 'Unit balance summary retrieved.');
-				if (!$scope.admin && $scope.current_user){
-					$scope.shareholder_balance_list = {};
-					$scope.balance_total = 0;
-					$scope.total_unit_count = Object.keys($scope.balance_summary).length;
-					for (i=0;i<$scope.total_unit_count;i++){
-						if ($scope.shareholder_balance_list[String($scope.balance_summary[Object.keys($scope.balance_summary)[i]])]){  //complicated way of querying whether each unit's balance value is on the non-admin balance list yet.
-							$scope.shareholder_balance_list[String($scope.balance_summary[Object.keys($scope.balance_summary)[i]])] += 1;
-						} else {
-							$scope.shareholder_balance_list[String($scope.balance_summary[Object.keys($scope.balance_summary)[i]])] = 1;
-						}
-						$scope.balance_total += Number($scope.balance_summary[Object.keys($scope.balance_summary)[i]]);
-					}
-				}// I should now have a histogram ready for graphing
-			}
-		})	
-		unitFactory.numbers_index(function(data){
-			var previously_activated_units = filterFactory.get('unit');
-			$scope.unit_numbers = data.unit_numbers;
-			for (i=0;i<$scope.unit_numbers.length;i++){
-				var this_filter = false;
-				if (previously_activated_units && $scope.unit_numbers[i] in previously_activated_units){
-					this_filter = true;
-				}
-				var this_unit_number = $scope.unit_numbers[i];
-				var this_unit_info = {name: this_unit_number, screen: "unit", filter: this_filter, balance: $scope.balance_summary[this_unit_number]};
-				$scope.info_by_unit[this_unit_number] = this_unit_info;
-			}
-		})
-		$scope.type_buttons= [];
-		$scope.type_translations = {'dues': 'dues', 'credit': 'credits', 'late_fee': 'late fees', 'other_fee': 'other fees', 'assessment': 'assessments'};
-		for (i=0;i<$scope.transaction_types.length;i++){
-			var this_type = $scope.transaction_types[i];
-			var this_label = $scope.type_translations[this_type];
-			var this_button_info = {name: this_type, label: this_label, screen: "type", filter: false};
-			$scope.type_buttons[i] = {};
-			$scope.type_buttons[i][this_label] = this_button_info;
-		}
-		$scope.toggle_button = function(button_name){ //clicking a filter button triggers a complicated series of events:
-			// 	1) Relevant filter added/removed from master filter list in filterfactory.
-			//	2) filterFactoyry broadcasts that a filter has updated
-			//	3) TransactionsIndexController hears it and ordere an updated transaction list from report factoryh
-			//	4) update_report in reportFactory checks to make sure there are active filters.  If none, returns an empty list to view.
-			//	5) Otherwise it retrieves the full list of filters and orders them to be used by $filter and returns the filtered results to view. 
-			if (button_name.screen){ //discerns what sort of button has been clicked (unit buttons have a different structure unforunately).  Using screen because .filter will fail this test if false.
-				if (button_name.filter === false){
-					filterFactory.add_filter(button_name.screen, button_name.name);
-				} else if (button_name.filter === true){
-					filterFactory.remove_filter(button_name.screen, button_name.name);
-				}
-				if (button_name.screen === 'type'){
-					$scope.type_buttons[button_name.label] = !$scope.type_buttons[button_name.label];
-				} else if (button_name.screen === 'date'){
-					$scope.date_buttons[button_name.label] = !$scope.date_buttoons[button_name.label];
-				}
-			} else {
-				if ($scope.info_by_unit[button_name].filter === false){
-					filterFactory.add_filter($scope.info_by_unit[button_name].screen, $scope.info_by_unit[button_name].name);
-				} else if ($scope.info_by_unit[button_name].filter === true){
-					filterFactory.remove_filter($scope.info_by_unit[button_name].screen, $scope.info_by_unit[button_name].name);
-				}
-				$scope.info_by_unit[button_name].filter = !$scope.info_by_unit[button_name].filter;
-			}
-		}
-		$scope.toggle_filter_options = function(toggled_section){
-			$scope.collapsed_filter_options[toggled_section] = !$scope.collapsed_filter_options[toggled_section];
-		}
-	}]);*/
 	myApp.controller('matrixesController', ['$scope', 'matrixFactory', 'userFactory', function($scope, matrixFactory, userFactory){
 		$scope.dues_matrix = [];
 		$scope.month_labels = matrixFactory.count_months();
@@ -1638,8 +1787,32 @@
 				$scope.main_data = {'show': index};
 				$scope.show_this_mortgage = $scope.mortgage_index[index];
 			}
+		}	
+	}]);
+	myApp.controller('preferencesController', ['$scope', 'reportFactory', 'userFactory', function($scope, reportFactory, userFactory){
+		var admin = userFactory.admin;
+		$scope.unit_transaction_reference_health = function(){
+			reportFactory.reference_health(function(result){
+				if (result === "ok"){
+					userFactory.log('message', "Unit & Transaction references look perfect.");
+				} else {
+					//console.log(JSON.stringify(result));
+					if (result.runaway_transactions.length > 0){
+						userFactory.log('error', "" + result.runaway_transactions.length + ' transactions believe themselves owned by a different unit.  See list in console.');
+						for (i=0;i<result.runaway_transactions.length;i++){
+							//console.log('Transaction: ' + JSON.stringify(result.runaway_transactions[i].transaction) + " and claimant, unit " + result.runaway_transactions[i].unit_number);
+						}
+					}
+					if (result.rejecting_units.length > 0){
+						userFactory.log('error', "" + result.rejecting_units.length + ' units reject clinging transactions.  See list in console.');
+						for (i=0;i<result.runaway_transactions.length;i++){
+							//console.log('Unit: ' + JSON.stringify(result.rejecting_units[i].unit) + " and clingant, transaction " + JSON.stringify(result.rejecting_units[i].transaction));			
+						}
+					}
+				}
+			})
 		}
-	}]);	
+	}]);
 	myApp.controller('reportsController', ['$scope', 'reportFactory', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, reportFactory, transactionFactory, unitFactory, userFactory){
 		$scope.date_for_sorting = transactionFactory.date_for_sorting;
 		$scope.active_unit_button = "";
@@ -1700,14 +1873,12 @@
 			$scope.generate_report(unit_number);
 		}
 	}]);
-	myApp.controller('shareholder_accountsController', ['$scope', 'reportFactory', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, reportFactory, transactionFactory, unitFactory, userFactory){
-		//console.log('placeholder');
-	}]);
 	myApp.controller('taxesController', ['$scope', 'propertyTaxFactory', 'mortgageFactory', 'userFactory', function($scope, propertyTaxFactory, mortgageFactory, userFactory){
 		$scope.current_user = userFactory.current_user;
 		$scope.admin = userFactory.admin;
 		$scope.new_tax = {};
 		$scope.new_tax_options = {};
+		$scope.official_calcs = {small: [992.19,736.37,848.34,1021.00,1204.92,1274.59, 1379.46], medium: [992.19, 985.98, 1135.92, 1354.74, 1613.37, 1690.65, 1847.08], large: [992.19, 1123.27, 1294.08, 1538.30, 1838.01, 1919.49, 2104.27]};  // these are from a summary xls but they conflict with single year sheets
 		propertyTaxFactory.index(function(prop_tax){
 			if (prop_tax.error){
 				userFactory.log('error', "Error retrieving property taxes: " + prop_tax.error);
@@ -1737,38 +1908,99 @@
 			})
 		}
 	}]);
-	/*
-	myApp.controller('transactionsIndexController', ['$scope', '$filter', 'filterFactory', 'reportFactory', 'transactionFactory', 'userFactory', function($scope, $filter, filterFactory, reportFactory, transactionFactory, userFactory){
+	myApp.controller('transactionsIndexController', ['$scope', '$filter', 'filterFactory', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, $filter, filterFactory, transactionFactory, unitFactory, userFactory){
 		$scope.edit_lock = {type: false, id: null};
-		$scope.updated_transaction = {};	
-		$scope.filters = filterFactory.get_filters();
-		$scope.or_filter = function(this_column_value, criteria){ // criteria should be a single-key object with values as a list (i.e. {unit: [7,8]})
-			console.log("Or_filter called comparing " + JSON.stringify(this_column_value) + " with " + JSON.stringify(criteria));
-			var match = false;
-			for (term_index=0; term_index<criteria.length;term_index++){
-				if (this_column_value === criteria[term_index]){  // if the key-designated column in the transaction is an exact match with any item in the criteria list
-					match = true;
-			//		console.log("I think " + this_transaction[Object.keys(criteria)[0]] + " equals " + criteria[Object.keys(criteria)[0]][term_index]);
+		$scope.updated_transaction = {};
+		$scope.proposed_filters = filterFactory.proposed_filters;
+		if (filterFactory.saved_filters){
+			filterFactory.saved_filters.restore($scope.proposed_filters);
+		}
+		$scope.active_filters = filterFactory.placeholder_filters;
+		$scope.unit_buttons = [];
+		$scope.type_buttons= [];
+		var bump_tell_count_tic = function(){  //for loop indexer slightly modified to be a unit-number iterator for times when it's just not worth the asynchrony trouble to do a server call.
+			var start_index = 0;
+			var bump = function(bump_tell_count){
+				if (bump_tell_count === 'reset'){
+					start_index = 0;
+					return ("ok");
+				} else if (start_index > 29){
+					//console.log("Error: bump_tell_count_tic is being forced to iterate too high");
+					return ({error: "No mure units to iterate"});
+				} else if (bump_tell_count == "tell" && start_index === 29){
+					//console.log("bump_tell_count_tic has reached the last unit");
+					return (start_index);
+				} else if (bump_tell_count == "tell"){
+					return (start_index);
+				} else if (bump_tell_count == "count"){
+					return 27;
+				} else if (bump_tell_count == "bump" && (start_index === 12 || start_index === 22)){
+					return (start_index += 2);
+				} else if (bump_tell_count == "bump" && (start_index === 29)){
+					return (start_index = 1);
+				} else if (bump_tell_count == "bump"){
+					return (start_index += 1);
 				}
-			//	console.log("I think " + this_transaction[Object.keys(criteria)[0]] + " does NOT equal " + criteria[Object.keys(criteria)[0]][term_index]);
+			}
+			return bump;
+		}();
+		var transaction_types = transactionFactory.allowed_types;
+		$scope.or_filter = function(this_column_value, criteria){ // criteria should be a single-key object with values as a list (i.e. {unit: [7,8]})
+			//console.log("Or_filter called comparing " + JSON.stringify(this_column_value) + " with " + JSON.stringify(criteria));
+			var match = false;
+			if (criteria.length < 1){
+				//console.log("Skipping filter of " + JSON.stringify(this_column_value) + " because " + JSON.stringify(criteria) + " is empty");
+				//console.log(JSON.stringify($scope.proposed_filters));
+				return true;
+			} else {
+				for (term_index=0; term_index<criteria.length;term_index++){
+					if (this_column_value === criteria[term_index]){  // if the key-designated column in the transaction is an exact match with any item in the criteria list
+						match = true;
+						//console.log("I think " + this_transaction[Object.keys(criteria)[0]] + " equals " + criteria[Object.keys(criteria)[0]][term_index]);
+					}
+					//console.log("I think " + this_transaction[Object.keys(criteria)[0]] + " does NOT equal " + criteria[Object.keys(criteria)[0]][term_index]);
+				}
 			}
 			return match;
 		}
-		
-		//	var my_filter = function(transaction, criteria){ var match = false; 
-		//	for(index=0;index<criteria[Object.keys(criteria)[0]].length;index++){ 
-		//	if (transaction[Object.keys(criteria)[0]] === criteria[Object.keys(criteria)[0]][index]){ match = true; console.log("I think " + transaction[Object.keys(criteria)[0]] + " equals " + criteria[Object.keys(criteria)[0]][index]);} else { console.log("I think " + transaction[Object.keys(criteria)[0]] + " does NOT equal " + criteria[Object.keys(criteria)[0]][index]); } } return match; }
-		
+		//var unit_numbers = unitFactory.numbers_index;
+		for (i=0;i<bump_tell_count_tic("count");i++){
+			$scope.unit_buttons.push({name: bump_tell_count_tic('bump'), label: bump_tell_count_tic('tell'), button_type: "unit"});
+			//console.log("Unit button born: " + JSON.stringify($scope.unit_buttons[($scope.unit_buttons.length -1)]));
+		}
+		$scope.type_translations = {'dues': 'dues', 'credit': 'credits', 'late_fee': 'late fees', 'other_fee': 'other fees', 'assessment': 'assessments'};
+		for (i=0;i<transaction_types.length;i++){
+			$scope.type_buttons.push({name: transaction_types[i], label: $scope.type_translations[transaction_types[i]], button_type: "type"});
+			//console.log("Type button born: " + JSON.stringify($scope.type_buttons[($scope.type_buttons.length -1)]));
+		}
+		$scope.apply_filters = function(){
+			//console.log("transactions controller apply filters method activated");
+			$scope.proposed_filters.activate($scope.active_filters);
+			filterFactory.saved_filters = $scope.active_filters;
+			//console.log("proposed filter status: " + JSON.stringify($scope.proposed_filters));
+			//console.log("active filter at end of filter application: " + JSON.stringify($scope.active_filters));
+		}
+		$scope.toggle_proposed_filter = function(attribute, value){
+			if (attribute === "unit" || attribute === "type"){
+				if (!$scope.proposed_filters[attribute]){
+					$scope.proposed_filters[attribute] = [];
+				}
+				var value_index = $scope.proposed_filters[attribute].indexOf(value);
+				if (value_index === -1){
+					$scope.proposed_filters[attribute].push(value);
+				} else {
+					$scope.proposed_filters[attribute].splice(value_index, 1);
+					if ($scope.proposed_filters[attribute].length === 0){
+						$scope.proposed_filters[attribute] = false;
+					}
+				}
+			}
+		}
 		transactionFactory.index(function(factory_response){
-			$scope.factory_response = factory_response.transactions_and_dues_index; 
+			//console.log("transactions index controller has called transaction factory index");
+			$scope.transactions_and_dues_index = factory_response.transactions_and_dues_index; 
 		});
-		$scope.allowed_types = transactionFactory.allowed_types;
 		$scope.date_for_sorting = transactionFactory.date_for_sorting;
-		//console.log('buttonscontroller f-t length is ' + $scope.filtered_transactions.length);
-		$scope.$on('filter_updated', function(){
-			//console.log("TransactionsIndex/ButtonsController heard about a filter update and is ordering an updated transaction list");
-			$scope.filters = filterFactory.get_filters();
-		})
 		$scope.sort_criterion = "-date";
 		var reverse_sort_strings = {
 			"date": "-date", 
@@ -1783,7 +2015,8 @@
 			"-type": "type", 
 			"notes": "-notes", 
 			"-notes": "notes"
-		};
+		}
+		//console.log("proposed filter status: " + JSON.stringify($scope.proposed_filters));
 		$scope.sort_by = function(new_criterion){
 			if (new_criterion.search($scope.sort_criterion) != -1){ //if user is just reversing the sort order
 				$scope.sort_criterion = reverse_sort_strings[$scope.sort_criterion];
@@ -1806,7 +2039,6 @@
 				check_number: this_transaction.check_number, 
 				notes: this_transaction.notes
 			};
-			//console.log("Prepped for editing: " + JSON.stringify($scope.updated_transaction));
 			$scope.edit_lock = {type: "edit", id: this_transaction._id};
 			userFactory.log('message', 'Transaction prepped for editing.');
 		}
@@ -1817,8 +2049,7 @@
 				} else {
 					userFactory.log("message", "Update completed.  About to refresh transactions.");
 					transactionFactory.index(function(factory_response){
-						$scope.factory_response = factory_response.transactions_and_dues_index; // depending on context, this will be an object with any of these:  message: string, filtered_transactions: array, sums: {sum: Number, running_balances: list}
-						//console.log("controller has received final filterd transaction list: Here is the first: " + JSON.stringify($scope.filtered_transactions[0]));
+						$scope.transactions_and_dues_index = factory_response.transactions_and_dues_index; // depending on context, this will be an object with any of these:  message: string, filtered_transactions: array, sums: {sum: Number, running_balances: list}
 					});
 				}
 			})
@@ -1834,27 +2065,14 @@
 					userFactory.log('error', "Error deleting transaction: " + result.error);
 				} else {
 					transactionFactory.index(function(factory_response){
-						$scope.factory_response = factory_response.transactions_and_dues_index;
+						$scope.transactions_and_dues_index = factory_response.transactions_and_dues_index;
 					});
 					$scope.edit_lock = {type: false, id: null};
 					userFactory.log('message', "Transaction deleted.  Server response: " + JSON.stringify(result.result));
 				}
 			})
 		}
-		//$scope.delete_transaction = function(this_transaction, this_unit){
-		//	transactionFactory.delete_one(this_transaction._id, function(result){
-		//		if (result.error){
-		//			userFactory.log('error', "Error deleting transaction: " + result.error);
-		//		} else {
-		//			var this_index = $scope.index_by_unit[this_unit].indexOf(this_transaction);
-		//			$scope.index_by_unit[this_unit].splice(this_index, 1);
-		//			$scope.edit_lock = {type: false, id: null};
-		//			userFactory.log('message', "Transaction deleted.  Server response: " + JSON.stringify(result.result));
-		//		}
-		//	})
-		//}
 	}]);
-	*/
 	myApp.controller('transactionsNewController', ['$scope', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, transactionFactory, unitFactory, userFactory){
 		$scope.display_prep = {};
 		$scope.allowed_types = transactionFactory.allowed_types;
@@ -1862,7 +2080,6 @@
 		$scope.clear_check_number = function(){
 			if ($scope.new_transaction.type != "credit"){
 				$scope.new_transaction.check_number = "";
-				//console.log('new check no = ' + $scope.new_transaction.check_number);
 			}
 		}
 		unitFactory.numbers_index(function(data){
@@ -1875,7 +2092,7 @@
 		$scope.add_tab = function(){
 			$scope.update_input = $scope.update_input + "\t";
 			$scope.$broadcast("tab_added");
-			console.log("should have broadcast tab_added");
+			//console.log("should have broadcast tab_added");
 		}
 		$scope.delete_all = function(){
 			$scope.delete_confirmation_pending = false;
@@ -1915,17 +2132,13 @@
 					userFactory.log('error', 'Error creating transaction: ' + data.error);
 				} else {
 					/*var used_date = $scope.new_transaction.date;
-					console.log("used date: " + used_date);
 					used_date = new Date(used_date);
-					console.log("Dated used date: " + used_date);
 					if (used_date.getMonth() < 12){
-						console.log("About to add month");
+						//console.log("About to add month");
 						used_date.setMonth(used_date.getMonth() + 1); 
-						console.log("Added month: " + used_date);
+						//console.log("Added month: " + used_date);
 					}
-					console.log("before apply: new transaction " + $scope.new_transaction.date + " & used_date " + used_date.toLocaleDateString());
-					$scope.$apply($scope.new_transaction.date = used_date.toLocaleDateString());
-					console.log("after apply: " + $scope.new_transaction.date);	*/
+					$scope.$apply($scope.new_transaction.date = used_date.toLocaleDateString());*/
 					$scope.saved_transaction = data.saved_transaction;
 					userFactory.log("message", 'Transaction created.');
 				}
@@ -1962,6 +2175,37 @@
 			})
 		}
 	}]);
+			//for (z=0;z<this_new_history.dates.length;z++){
+			//	this_new_history.dates[z] = new Date(this_new_history.dates[z]);
+			//}
+			//var these_balances = {
+			//	dates: this_new_history.dates,
+			//	values: this_new_history.values
+			//};
+			/*for (x=0;x<these_balances.length;x++){
+				if (these_balances.values.length < 2000){
+					these_balances.dates[0] = new Date("12/31/2006"); // some of them have transactions on 1/1/07 that I don't want collapsed into initial value.
+					console.log("convert_to_daily is about to start iterating through " + these_balances.dates.length + " dates");
+					for (y=1;y<these_balances.dates.length;y++){
+						var this_date = new Date(these_balances.dates[y]);
+						var this_value = these_balances.values[y];
+						var last_date = new Date(these_balances.dates[y-1]);
+						var last_value = these_balances.values[y-1];
+						console.log("comparing " + this_date + " to " + last_date);
+						if (this_date.getDate() === last_date.getDate()){					// if a date is repeated
+							console.log("and decided they're the same date");
+							these_balances.dates.splice(y-1, 1);		// only keep the last one.  Be careful of index shift though
+							these_balances.values.splice(y-1, 1);
+							y--;
+						} else if (last_date.setDate(last_date.getDate() + 1) < this_date){	// remember that last_date is now +1
+							these_balances.dates.splice(y, 0, last_date);
+							these_balances.values.splice(y, 0, last_value);  // but do NOT put an extra y++, since you want to use this new insertion in next comparison
+						}
+					}
+				}
+			} */
+			//$scope.this_new_history = this_new_history;
+			//$scope.daily_result = these_balances;
 	</script>
 	<script type="text/javascript" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
 	<meta name="google-signin-client_id" content="544028406258-p756lflvl7dqrap03ajh3kogfmc873pf.apps.googleusercontent.com">
@@ -1969,3 +2213,35 @@
 <body ng-app='myApp'>
  	<div ng-view></div>
 </body>
+
+			//for (z=0;z<this_new_history.dates.length;z++){
+			//	this_new_history.dates[z] = new Date(this_new_history.dates[z]);
+			//}
+			//var these_balances = {
+			//	dates: this_new_history.dates,
+			//	values: this_new_history.values
+			//};
+			/*for (x=0;x<these_balances.length;x++){
+				if (these_balances.values.length < 2000){
+					these_balances.dates[0] = new Date("12/31/2006"); // some of them have transactions on 1/1/07 that I don't want collapsed into initial value.
+					console.log("convert_to_daily is about to start iterating through " + these_balances.dates.length + " dates");
+					for (y=1;y<these_balances.dates.length;y++){
+						var this_date = new Date(these_balances.dates[y]);
+						var this_value = these_balances.values[y];
+						var last_date = new Date(these_balances.dates[y-1]);
+						var last_value = these_balances.values[y-1];
+						console.log("comparing " + this_date + " to " + last_date);
+						if (this_date.getDate() === last_date.getDate()){					// if a date is repeated
+							console.log("and decided they're the same date");
+							these_balances.dates.splice(y-1, 1);		// only keep the last one.  Be careful of index shift though
+							these_balances.values.splice(y-1, 1);
+							y--;
+						} else if (last_date.setDate(last_date.getDate() + 1) < this_date){	// remember that last_date is now +1
+							these_balances.dates.splice(y, 0, last_date);
+							these_balances.values.splice(y, 0, last_value);  // but do NOT put an extra y++, since you want to use this new insertion in next comparison
+						}
+					}
+				}
+			} */
+			//$scope.this_new_history = this_new_history;
+			//$scope.daily_result = these_balances;

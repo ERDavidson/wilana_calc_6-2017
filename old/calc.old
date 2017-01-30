@@ -1,0 +1,49 @@
+<div ng-controller='calcsController'>
+  <a href='#/calc'>Input Dues History</a> | <a href='#/unit_editor'>Unit Editor</a> | <a href='#/transactions/index'>View Transactions</a> | <a href='#/show_matrix'>Display Dues Matrix</a> | <a href='#/update_dues'>Enter New Payments</a> | <a href='#/reports'>Reports</a>
+  <h1 ng-bind='errors'></h1>
+  <h3>Calculator</h3>
+  <textarea ng-model='dues_input' ng-change='input_many()' rows=35 cols=294></textarea>
+  <table ng-show='unit_list'>
+    <tr>
+      <th>Unit</th>
+      <th>Shareholder</th>
+      <th>Current Balance</th>
+      <th ng-repeat='date in date_list track by $index'><span ng-bind='date'></span></th>
+    </tr>
+    <tr ng-repeat='unit in unit_list track by $index'>
+      <td ng-bind='$index'></td>
+      <td class='shareholder' ng-bind='unit.shareholder'></td>
+      <td ng-bind='unit.curr_balance'></td>
+      <td ng-repeat='entry in unit.dues_history track by $index'><span ng-bind='entry'></span></td>
+    </tr>
+  </table>
+  <input type='submit' ng-click='save_units()' value='Add units to database'>
+  <input type='submit' ng-click='show_units()' value='Display units in database'>
+  <h3>Units in database:</h3>
+  <table>
+    <tr>
+      <th>Unit #</th>
+      <th>Shareholder</th>
+      <th>Initial Balance</th>
+      <th>Payments</th>
+    </tr>
+    <tr ng-repeat='unit in index'>
+      <td ng-bind='unit.number'></td>
+      <td ng-bind='unit.shareholder'></td>
+      <td ng-bind='unit.initial_balance'></td>
+      <td>
+        <table>
+          <tr>
+            <th>Amount</th>
+            <th>Check #</th>
+            <th>Date</th>
+          <tr ng-repeat='payment in unit.credits'>
+            <td ng-bind='payment.amount'></td>
+            <td ng-bind='payment.number'></td>
+            <td ng-bind='payment.date'></td>
+          </tr>
+        </table> <!-- the insert method is messy as fuck, but appears to work  -->
+      </td>
+    </tr>
+  </table>
+</div>

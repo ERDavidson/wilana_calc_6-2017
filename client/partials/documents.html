@@ -1,4 +1,97 @@
 <div ng-include="'./partials/includes/nav_pane.html'"></div>
-<div>
-	<h3>zFuture Document & Link & Suggested Professionals Library</h3>
+<div class='docs'>
+	<div class='options_bar'>
+		<h2>Document Categories</h2>
+		<div ng-repeat='(stack_alias, stack_info) in library_info' ng-class='{"tooltip long_button": true, "pressed": (stack_info.show === true), "unpressed": (stack_info.show === false)}' ng-click='toggle_library(stack_alias)' unselectable="on"><div class='button_label' ng-bind='stack_info.label' unselectable="on"></div><span class='tooltiptext' unselectable="on" ng-bind='stack_info.tooltip_info'></span></div>
+	</div>
+	<div class='main_data'>	
+		<div class='library_group' ng-show='library_info["prof_services"].show'>
+			<h2>Professional services who are familiar with the Wilana</h2>
+			<p>Know someone who should be on this list? <a href='#/feedback'>Let us know</a></p>
+			<div class='contact_row'>
+				<div class='contact_info'>
+					<p>Good Services Plumbing & Heating</p>
+					<p>1715 12th Ave</p>
+					<p>Seattle WA 98122</p>
+					<p>(206) 322-3000</p>
+				</div>
+			</div>	
+			<div class='contact_row'>
+				<div class='contact_info'>
+					<p>Bellevue Plumbing</p>
+					<p>14111 NE 24TH Street</p>
+					<p>Bellevue, WA 98007</p>
+					<p>admin@bellevueplumbing.net</p>
+					<p>(425) 313-2122</p>
+					<p><a href='http://www.bellevueplumbinginc.com'>website</a></p>
+				</div>
+			</div>
+			<div class='contact_row'>
+				<div class='contact_info'>
+					CSC Serviceworks (Washers & Dryers)
+				</div>
+			</div>
+			<div class='contact_row'>
+				<div class='contact_info'>
+					Bergman's Lock & Key
+				</div>
+			</div>
+			<div ng-show='false'>
+			<div class='contact_row'>
+				<div class='contact_info'>
+					Bowie Electric Service
+				</div>
+			</div>
+			<div class='contact_row'>
+				<div class='contact_info'>
+					CSC Serviceworks (Washers & Dryers)
+				</div>
+			</div>
+			<div class='contact_row'>
+				<div class='contact_info'>
+					Fire Safety Systems
+				</div>
+			</div>
+			<div class='contact_row'>
+				<div class='contact_info'>
+					Wild Tree Woodworks
+				</div>
+			</div>
+			</div>
+		</div>
+		<div class='library_group' ng-show='library_info["links"].show'>
+			<h2>Coop-related IRS publications</h2>
+			<ul>
+				<li>
+					<a href='https://www.irs.gov/publications/p936/'>Publication 936: Home Mortgage Interest Deduction</a>
+				</li>
+				<li>
+					<ul>
+						<li><a href='https://www.irs.gov/pub/irs-pdf/p936.pdf'>PDF version</a></li>
+						<li>rules specific to coops: <a href='https://www.irs.gov/publications/p936/ar02.html#en_US_2016_publink1000229984'>Special Rule for Tenant-Stockholders in Cooperative Housing Coporations</a></li>
+					</ul>
+				</li>
+				<li>
+					<a href='https://www.irs.gov/publications/p530/'>Tax Information for Homeowners</a> (includes information on real estate tax deduction) | 
+				</li>
+				<li>
+					<ul>
+						<li><a href='https://www.irs.gov/pub/irs-pdf/p936.pdf'>PDF version</a></li>
+						<li>rules specific to coops: <a href='https://www.irs.gov/publications/p530/ar02.html#en_US_2016_publink100011853'>Special Rules for Cooperatives</a></li>
+					</ul>
+				</li>
+				<li>
+					<a href='https://www.irs.gov/taxtopics/tc308.html'>Tax Topics: Amended Returns</a>
+				</li>
+			</ul>
+		</div>
+		<div class='library_group' ng-show='library_info["governing_docs"].show'>
+			<h2>Wilana Governing Documents</h2>
+			<p>(On to-do list)</p>
+		</div>		
+		<div class='library_group' ng-show='library_info["minutes"].show'>
+			<h2>Meeting Minutes</h2>
+			<p>(On to-do list)</p>
+		</div>
+	</div>
 </div>

@@ -1,0 +1,466 @@
+
+	myApp.filter('in_group', function(){
+		console.log("ingroup filter called");
+		return function(parameters){   // parameters = {item_list: [x,y,z], group: [x,y]}  or {item_list: [{object}, {object}], group: {value: true, value: true}, property: 'unit_number'}
+			var filtered_list = [];
+			if (!parameters.group){
+				//console.log("Filter determined that there is no group, which would be the case if group were false.  Item List would have been " + parameters.item_list + " long.");
+				filtered_list = parameters.item_list;		// 2nd parameter will be "group: false" if that property is set to be unfiltered.  This is different from having no filters clicked, which would return []
+			} else {
+				for (i=0;i<parameters.item_list.length;i++){
+					if (!parameters.property){ // determines whether the input list is a regular array or an array of objects
+						//console.log("Filter is behaving as if it were given a list of items to filter instead of an object of them");
+						if (parameters.item_list[i] in parameters.group){
+							//console.log("Determined that parameters item list i: " + parameters.item_list[i] + " is in parameters group: " + parameters.group);
+							filtered_list.push(parameters.item_list[i]);
+						} else {
+							//console.log("Filter did not think this item was 'in' this group & so culled it.  Group: " + parameters.group + ", Item: " + JSON.stringify(parameters.item_list[i]));
+						}
+					} else {
+						//console.log("filter is behaving as if it were given an object full of things to evaluate, not a list");
+						if (parameters.item_list[i][parameters.property] in parameters.group){
+							filtered_list.push(parameters.item_list[i]);
+						} else {
+							console.log("Filter determined that tem list [i]." + parameters.property + ", " + parameters.item_list[i][parameters.property] + " was not in " + JSON.stringify(parameters.group) + " and threw it away");
+						}
+					}
+				}
+			}
+			//console.log("filter is returning filtered_list, length " + filtered_list.length);
+			return filtered_list;
+		}
+	});
+		/*factory.balance_summary = function(callback){
+			unitFactory.numbers_index(function(unit_numbers_index){						 // get all unit numbers
+				if (unit_numbers_index.error){
+					callback(unit_numbers_index);
+				} else {
+					var these_units = unit_numbers_index.unit_numbers;
+					var these_balances = {};
+					for(i=0; i<these_units.length;i++){									//go through each one
+						factory.full_history(these_units[i], function(this_history){	//and determine its balance
+							these_balances[this_history.unit] = this_history.current_balance; //and add the balance to the index hash
+							//console.log("added a unit to balance summary.  Summary now has " + Object.keys(these_balances).length + " units.  Object: " + JSON.stringify(these_balances));
+							if (Object.keys(these_balances).length === unit_numbers_index.unit_numbers.length){  //and if we have as many balances as units, that means we're done, and should callback the result.
+								//console.log("returning balance summary to controller");
+								callback(these_balances);
+							} else {
+								//console.log("Chose not to return summary of length " + Object.keys(these_balances).length + " because it is less than " + unit_numbers_index.unit_numbers.length);
+							}
+						})
+					}
+				}
+			})
+		}*/
+
+	/*
+	myApp.controller('filtersController', ['$scope', '$rootScope', '$filter', 'reportFactory', 'unitFactory', 'filterFactory', 'transactionFactory', function($scope, $rootScope, $filter, reportFactory, unitFactory, filterFactory, transactionFactory){
+		$scope.transaction_types = transactionFactory.allowed_types;
+		$scope.transaction_labels = [];
+		$scope.unit_buttons = [];
+		$scope.allowed_units = {};
+		$scope.allowed_types = {};
+		$scope.collapsed_filter_options = {unit: true, type: true, date: true, amount: true};
+		var active_filters = filterFactory.get_filters();
+		var filter_values = {}; //I want to change filtering to these two things.  One for data entered into fields, and the other for which data to pay attentioon to.
+		var filter_activity = {};
+		unitFactory.numbers_index(function(data){
+			$scope.unit_numbers = data.unit_numbers;
+			for (i=0;i<$scope.unit_numbers.length;i++){
+				var this_filter_activity = false;
+				if (active_filters.unit && active_filters.unit.indexOf($scope.unit_numbers[i]) != -1){
+					this_filter_activity = true;
+				}
+				$scope.unit_buttons.push({name: $scope.unit_numbers[i], label: $scope.unit_numbers[i], button_type: "unit", active: this_filter_activity});
+			}
+		})
+		$scope.type_buttons= [];
+		$scope.type_translations = {'dues': 'dues', 'credit': 'credits', 'late_fee': 'late fees', 'other_fee': 'other fees', 'assessment': 'assessments'};
+		for (i=0;i<$scope.transaction_types.length;i++){
+			var this_filter_activity = false;
+			if (active_filters.type && active_filters.type.indexOf($scope.transaction_types[i]) != -1){
+				this_filter_activity = true;
+			}
+			$scope.type_buttons.push({name: $scope.transaction_types[i], label: $scope.type_translations[$scope.transaction_types[i]], button_type: "type", active: this_filter_activity});
+		}
+		$scope.string_button = {name: "string", label: "By Above Text", type: "string", active: active_filters.string};
+		$scope.check_button = {name: "check_no", label: "By Above Check #", type: "check_no", active: active_filters.check_no};
+		$scope.new_filters = {};	
+		$scope.toggle_unit_button = function(clicked_button){ 
+			if (clicked_button.active === false){
+				active_filters.unit.push(clicked_button.name);
+			} else if (active_filters.unit.indexOf(clicked_button.name) != -1){
+				active_filters.unit.splice(active.filters.unit.indexOf(clicked_button.name), 1);
+			} else {
+				userFactory.log("error", "filtersController just tried to remove a unit filter that was neither inactive nor in use");
+			}
+			this_button.active = !this_button.active;
+			filterFactory.change_filter("unit", active_filters.unit);
+		}
+		$scope.toggle_type_button = function(clicked_button){ 
+			if (clicked_button.active === false){
+				active_filters.type.push(clicked_button.name);
+			} else if (active_filters.type.indexOf(clicked_button.name) != -1){
+				active_filters.type.splice(active.filters.type.indexOf(clicked_button.name), 1);
+			} else {
+				userFactory.log("error", "filtersController just tried to remove a type filter that was neither inactive nor in use");
+			}
+			this_button.active = !this_button.active;
+			filterFactory.change_filter("type", active_filters.type);
+		}		
+		$scope.toggle_string_button = function(clicked_button){ 
+			if (clicked_button.active === false){
+				active_filters.string = $scope.potential_string_filter;
+			} else {
+				active_filters.string = false;
+			}
+			$scope.string_button.active = !$scope.string_button.active;
+			filterFactory.change_filter("string", active_filters.string);
+		}		
+		$scope.toggle_check_button = function(clicked_button){ 
+			if (clicked_button.active === false){
+				active_filters.check_no = $scope.potential_check_filter;
+			} else {
+				active_filters.check_no = false;
+			}
+			$scope.check_button.active = !$scope.check_button.active;
+			filterFactory.change_filter("check_no", active_filters.check_no);
+		}
+		$scope.toggle_filter_options = function(toggled_section){
+			$scope.collapsed_filter_options[toggled_section] = !$scope.collapsed_filter_options[toggled_section];
+		}
+	}]);
+	*/
+
+	/*myApp.controller('filters_v2Controller', [
+		'$scope', 
+		'$rootScope', 
+		'$filter', 
+		'reportFactory', 
+		'unitFactory', 
+		'userFactory',
+		'filterFactory', 
+		'transactionFactory', 
+		function($scope, $rootScope, $filter, reportFactory, unitFactory, userFactory, filterFactory, transactionFactory, transactionFilter){
+		$scope.transaction_types = transactionFactory.allowed_types;
+		$scope.admin = userFactory.admin;
+		$scope.current_user = userFactory.current_user;
+		$scope.transaction_labels = [];
+		$scope.buttons = [];
+		$scope.allowed_units = {};
+		$scope.allowed_types = {};
+		$scope.info_by_unit ={};
+		$scope.collapsed_filter_options = {unit: true, type: true, date: true, amount: true};
+		reportFactory.balance_summary(function(result){
+			if (result.error){
+				userFactory.log('error', "Error retrieving balances summary: " + result.error);
+			} else {
+				$scope.balance_summary = result; // has format {<unit_number>: <balance>, <unit_number>: <balance>}
+				userFactory.log('message', 'Unit balance summary retrieved.');
+				if (!$scope.admin && $scope.current_user){
+					$scope.shareholder_balance_list = {};
+					$scope.balance_total = 0;
+					$scope.total_unit_count = Object.keys($scope.balance_summary).length;
+					for (i=0;i<$scope.total_unit_count;i++){
+						if ($scope.shareholder_balance_list[String($scope.balance_summary[Object.keys($scope.balance_summary)[i]])]){  //complicated way of querying whether each unit's balance value is on the non-admin balance list yet.
+							$scope.shareholder_balance_list[String($scope.balance_summary[Object.keys($scope.balance_summary)[i]])] += 1;
+						} else {
+							$scope.shareholder_balance_list[String($scope.balance_summary[Object.keys($scope.balance_summary)[i]])] = 1;
+						}
+						$scope.balance_total += Number($scope.balance_summary[Object.keys($scope.balance_summary)[i]]);
+					}
+				}// I should now have a histogram ready for graphing
+			}
+		})	
+		unitFactory.numbers_index(function(data){
+			var previously_activated_units = filterFactory.get('unit');
+			$scope.unit_numbers = data.unit_numbers;
+			for (i=0;i<$scope.unit_numbers.length;i++){
+				var this_filter = false;
+				if (previously_activated_units && $scope.unit_numbers[i] in previously_activated_units){
+					this_filter = true;
+				}
+				var this_unit_number = $scope.unit_numbers[i];
+				var this_unit_info = {name: this_unit_number, screen: "unit", filter: this_filter, balance: $scope.balance_summary[this_unit_number]};
+				$scope.info_by_unit[this_unit_number] = this_unit_info;
+			}
+		})
+		$scope.type_buttons= [];
+		$scope.type_translations = {'dues': 'dues', 'credit': 'credits', 'late_fee': 'late fees', 'other_fee': 'other fees', 'assessment': 'assessments'};
+		for (i=0;i<$scope.transaction_types.length;i++){
+			var this_type = $scope.transaction_types[i];
+			var this_label = $scope.type_translations[this_type];
+			var this_button_info = {name: this_type, label: this_label, screen: "type", filter: false};
+			$scope.type_buttons[i] = {};
+			$scope.type_buttons[i][this_label] = this_button_info;
+		}
+		$scope.toggle_button = function(button_name){ //clicking a filter button triggers a complicated series of events:
+			// 	1) Relevant filter added/removed from master filter list in filterfactory.
+			//	2) filterFactoyry broadcasts that a filter has updated
+			//	3) TransactionsIndexController hears it and ordere an updated transaction list from report factoryh
+			//	4) update_report in reportFactory checks to make sure there are active filters.  If none, returns an empty list to view.
+			//	5) Otherwise it retrieves the full list of filters and orders them to be used by $filter and returns the filtered results to view. 
+			if (button_name.screen){ //discerns what sort of button has been clicked (unit buttons have a different structure unforunately).  Using screen because .filter will fail this test if false.
+				if (button_name.filter === false){
+					filterFactory.add_filter(button_name.screen, button_name.name);
+				} else if (button_name.filter === true){
+					filterFactory.remove_filter(button_name.screen, button_name.name);
+				}
+				if (button_name.screen === 'type'){
+					$scope.type_buttons[button_name.label] = !$scope.type_buttons[button_name.label];
+				} else if (button_name.screen === 'date'){
+					$scope.date_buttons[button_name.label] = !$scope.date_buttoons[button_name.label];
+				}
+			} else {
+				if ($scope.info_by_unit[button_name].filter === false){
+					filterFactory.add_filter($scope.info_by_unit[button_name].screen, $scope.info_by_unit[button_name].name);
+				} else if ($scope.info_by_unit[button_name].filter === true){
+					filterFactory.remove_filter($scope.info_by_unit[button_name].screen, $scope.info_by_unit[button_name].name);
+				}
+				$scope.info_by_unit[button_name].filter = !$scope.info_by_unit[button_name].filter;
+			}
+		}
+		$scope.toggle_filter_options = function(toggled_section){
+			$scope.collapsed_filter_options[toggled_section] = !$scope.collapsed_filter_options[toggled_section];
+		}
+	}]);*/
+
+	myApp.controller('shareholder_accountsController', ['$scope', 'reportFactory', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, reportFactory, transactionFactory, unitFactory, userFactory){
+		//console.log('placeholder');
+	}]);
+
+	myApp.controller('matrixesController', ['$scope', 'matrixFactory', 'userFactory', function($scope, matrixFactory, userFactory){
+		$scope.dues_matrix = [];
+		$scope.month_labels = matrixFactory.count_months();
+		$scope.dues_matrix = {};
+		matrixFactory.index(function(data){
+			if (data.error){
+				userFactory.log('error', "Error retrieving dues rates: " + data.error);
+			} else {
+				$scope.dues_matrix = data;
+				userFactory.log('message', 'Dues rate matrix loaded.');
+			}
+		})
+	}]);
+	myApp.factory('filterFactory', ['$rootScope', function($rootScope){
+		var factory = {}; 
+		var current_filters = {"date": {"active": false, "more_than": "", "less_than": ""}, "amount": {"active": false, "more_than": null, "less_than": null}, "type": {"active": false, "values": []}, "string": {"active": false, "value": ""}, "check_no": {"active": false, "unit": []}};
+		factory.change_filter = function(filter_type, new_status){
+			current_filters[filter_type] = new_status;
+			$rootScope.$broadcast('filter_updated');
+			return current_filters;
+		}
+		factory.get_filters = function(){
+			var active_filters = {};
+			for (key in current_filters){
+				if (current_filters[key].active){
+					active_filters[key] = current_filters[key];
+				}
+			}
+			return active_filters;
+		}
+		return factory;
+	}]);
+		/*
+		var isEmpty = function(this_object) { 
+   			for (var x in this_object) { 
+   				return false; 
+   			}
+   			return true;
+   		}
+   		var broadcast_prep = function(action, this_filter, this_value, callback){
+   			if (action === "add"){
+   				filters[this_filter][this_value] = true;  //couldn't think of a way to add to hash if present or create hash if absent without at least one if statement
+				factory.filter_count += 1;
+				//console.log('filter ' + this_filter + ": " + this_value + " added to filter hash and filter_count is now " + factory.filter_count);
+   			} else if (action === 'remove'){
+				delete filters[this_filter][this_value];
+				factory.filter_count -= 1;
+				//console.log('filter ' + this_filter + ": " + this_value + " removed.");
+   			}
+   			callback(factory.filter_count);
+   		}
+   		factory.filter_count = 0;
+   		factory.get = function(this_filter){
+   			if (isEmpty(filters[this_filter])){
+   				//console.log("determined that " + this_filter + " in " + JSON.stringify(filters) + " is empty");
+   				return false;
+   			} else {
+   				//console.log("Returning populated filter: " + JSON.stringify(filters[this_filter]));
+   				return filters[this_filter];
+   			}
+   		}
+		factory.add_filter = function(this_filter, this_value){
+			if (!(this_filter in filters)){
+				//console.log("filterfactory is adding " + this_filter + " to " + JSON.stringify(filters));
+				filters[this_filter] = {};
+			}
+			console.log("About to start broadcast prep by adding" + this_value + ": true to " + this_filter + " in " + JSON.stringify(filters));
+			broadcast_prep("add", this_filter, this_value, function(filter_count){
+				console.log("In broadcast_prep callback.  filter_count is " + filter_count + " About to broadcast & return filter values.");
+				$rootScope.$broadcast('filter_updated');  // this was firing off and causing a transaction list update bfore filter_count could get incremented, so turned it into callback.
+			})
+			//console.log("add_filter is returning " + this_filter);
+			return factory.get(this_filter);
+		}
+		factory.remove_filter = function(this_filter, this_value){
+			broadcast_prep("remove", this_filter, this_value, function(filter_count){
+				console.log("In broadcast_prep callback.  filter_count is " + filter_count + "About to broadcast & return filter values or false");
+				$rootScope.$broadcast('filter_updated');
+				return factory.get(this_filter);
+			})
+		}
+		*/
+
+
+<!--<hr>
+
+	<input ng-show='current_user === "Admin"' type='submit' ng-click='logoff_many()' value='Log off all users'>
+
+	<h2>Account History for Unit <span ng-bind='current_user'></span></h2>
+	<div class='full_history'>
+		<table>
+			<tr>
+				<th>Date</th>
+				<th>Charges</th>
+				<th>Credits</th>
+				<th>Type</th>
+				<th>Check No.</th>
+				<th>Running Balance</th>
+			</tr>
+			<tr ng-repeat='row in this_report.transactions track by $index'>
+				<td ng-bind='row.date'></td>
+				<td><span ng-show='row.charge_amount' ng-bind="'$'+row.charge_amount"></span></td>
+				<td><span ng-show='row.credit_amount' ng-bind="'$'+row.credit_amount"></span></td>
+				<td ng-bind='row.type'></td>
+				<td ng-bind='row.check_number'></td>
+				<td ng-bind="'$'+this_report.balances[$index]"></td>
+			</tr>
+			<tr>
+				<td>12/31/2010</td>
+				<td></td>
+				<td></td>
+				<td>Initial Balance</td>
+				<td></td>
+				<td><span ng-bind="'$'+initial_balance"></span></td>
+			</tr>
+		</table>
+	</div>-->
+	<div class='options_bar' ng-controller='filters_v2Controller'>
+	<div class='filter_title'>
+		<h2>Shareholder Accounts</h2>
+		<h3><button type='submit' ng-class="{'trans_filter filter_by': true, 'pressed': !collapsed_filter_options.unit, 'unpressed': collapsed_filter_options.unit}" ng-click='toggle_filter_options("unit")'><span class='button_label'>By Unit</span></button></h3>
+	</div>
+	<table ng-show='admin && collapsed_filter_options.unit === false' class='balance_summary'>
+		<tr>
+			<th>Unit</th>
+			<th>Current Balance</th>
+		</tr>
+		<tr ng-repeat='(unit, this_unit_info) in info_by_unit'>
+			<td>
+				<div ng-class="{'small_button: true, pressed': (this_unit_info.filter === true), 'unpressed': (this_unit_info.filter === false)}" ng-click='toggle_button(unit)'>
+					<h2 class='button_label'>Unit 
+						<span ng-bind='unit'></span>, balance 
+						<span ng-show='this_unit_info.balance <= 0'>owed: </span>
+						<span ng-show='this_unit_info.balance > 0'>surplus: </span>
+						<span ng-bind='this_unit_info.balance | currency'></span>
+					</h2>
+				</div>
+			</td>
+			<td>{{this_unit_info}}</td>
+		</tr>
+	</table>
+	<div class='filter_title'>
+		<h3><button type='submit' ng-class="{'trans_filter filter_by': true, 'pressed': !collapsed_filter_options.type, 'unpressed': collapsed_filter_options.type}" ng-click='toggle_filter_options("type")'><span class='button_label'>By Type</span></button></h3>
+	</div>
+	<div ng-show='collapsed_filter_options.type === false'>
+		<div ng-repeat='this_button in type_buttons | orderBy: "label"' ng-class="{'trans_filter': true, 'long_button': true, 'pressed': (this_button.filter === true), 'unpressed': (this_button.filter === false)}" ng-click='toggle_button(this_button)'>
+			<h2 class='button_label' ng-bind='this_button.label'></h2>
+		</div>
+	</div>
+</div>
+<!--		<h3><button type='submit' ng-class="{'inverted': true, 'pressed': !collapsed_filter_options.unit}" ng-click='toggle_filter_options("unit")'><span ng-show='collapsed_filter_options.unit === true'> v </span><span ng-show='collapsed_filter_options.unit === false'> ^ </span></button></h3>
+		<h3>By Type <button type='submit' ng-class="{'inverted': true, 'pressed': !collapsed_filter_options.unit}" ng-click='toggle_filter_options("type")'><span ng-show='collapsed_filter_options.type === true'> v </span><span ng-show='collapsed_filter_options.type === false'> ^ </span></button></h3>-->
+
+<!--<div ng-show='this_report'>
+	<table class='display_table'>
+		<tr>
+			<th>Date</th>
+			<th>Dues</th>
+			<th>Assessents</th>
+			<th>Fees</th>
+			<th>Payments</th>
+			<th>Check No.</th>
+			<th>Running Balance</th>
+		</tr>
+		<tr>
+			<td>12/31/2010</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td><span ng-bind='initial_balance'></span></td>
+		</tr>
+		<tr ng-repeat='row in this_report.dues track by $index' ng-click='edit_transaction()'>
+			<td ng-bind='this_report.dues[$index].date + this_report.assessments[$index].date + this_report.fees[$index].date + this_report.payments[$index].date'></td>
+			<td ng-bind='this_report.dues[$index].amount'></td>
+			<td ng-bind='this_report.assessments[$index].amount'></td>
+			<td ng-bind='this_report.fees[$index].amount'></td>
+			<td ng-bind='this_report.payments[$index].amount'></td>
+			<td ng-bind='this_report.payments[$index].number'></td>
+			<td ng-bind='this_report.balance[$index]'></td>
+		</tr>
+	</table>
+</div>
+<table class='display_table'>Transaction Editor -->
+<!-- This will be great but really needs implementation of transaction as a model -->
+<!--	<tr>
+	  <td>ID:</td>
+	  <td ng-bind='this_transaction._id'></td>
+	</tr>
+	<tr>
+	  <td>Unit:</td>
+	  <td ng-bind='this_transaction.unit'></td>
+	</tr>
+	<tr>
+	  <td>Date:</td>
+	  <td ng-bind='this_transaction.date'></td>
+	</tr>
+	<tr>
+	  <td>Type:</td>
+	  <td ng-bind='this_transaction.type'></td>
+	</tr>
+	<tr>
+	  <td>Amount:</td>
+	  <td ng-bind='this_transaction.amount'></td>
+	</tr>
+	<tr>
+	  <td>Check No.:</td>
+	  <td ng-bind='this_transaction.number'></td>
+	</tr>
+	<tr>
+	  <td>Notes:</td>
+	  <td ng-bind='this_transaction.notes'></td>
+	</tr>
+</table>-->
+<!--<table class='display_table' ng=show='this_report'>
+	<tr>
+		<td ng-bind='this_report'></td>
+	</tr>
+</table>-->
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div class='options_hole' ng-include="'./partials/includes/filter_bar_v2.html'"></div>
+<div ng-controller='shareholder_accountsController'>
+</div>
+<!--	<div class='spending_chart'>
+		<linechart data="expense_chart_data" options="expense_chart_options"></linechart>
+	</div>
+	<h2>Income Graph</h2>
+	<div class='spending_chart'>
+		<linechart data="income_chart_data" options="income_chart_options"></linechart>
+	</div>
+-->
+		factory.index(function(data){
+			console.log("did initial transaction index.  Not sure why");
+		})

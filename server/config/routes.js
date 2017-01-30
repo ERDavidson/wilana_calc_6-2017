@@ -6,6 +6,7 @@ var messages = require('./../controllers/messages.js');
 var mortgages = require('./../controllers/mortgages.js');
 var property_taxes = require('./../controllers/property_taxes.js');
 var budget_lines = require('./../controllers/budget_lines.js');
+var balance_histories = require('./../controllers/balance_histories.js');
 module.exports = function(app){
 	app.post('/users/register', function(req,res){
 		users.register(req,res);
@@ -34,6 +35,12 @@ module.exports = function(app){
 	app.use(function(req,res,next){
 		//console.log("Authentication middleware activated");
 		next();
+	});
+	app.post('/balance_histories/create', function(req,res){
+		balance_histories.create(req,res);
+	});
+	app.post('/balance_histories', function(req,res){
+		balance_histories.index(req,res);
 	});
 	app.post('/users/:unit_number/update', function(req,res){
 		users.update(req,res);

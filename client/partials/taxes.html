@@ -1,6 +1,6 @@
 <div ng-include="'./partials/includes/nav_pane.html'"></div>
 <div class='options_bar'></div>
-<div class='main_data' ng-controller='taxesController'>
+<div class='main_data'>
 	<div ng-show='admin'>
 		<form class='new_prop_tax'>
 			<h3>Enter New Tax Year:</h3>
@@ -46,35 +46,81 @@
 			<th>Total tax: </th>
 			<td ng-repeat='tax in property_taxes_by_attribute["Total Tax"] track by $index' ng-bind='tax | currency'></td>
 		</tr>
-		<tr>
-			<th>Primary bill: </th>
-			<td ng-repeat='tax in property_taxes_by_attribute["Primary Bill"] track by $index' ng-bind='tax | currency'></td>
-		</tr>
-		<tr>
-			<th>Sr. citizen bill: </th>
-			<td ng-repeat='tax in property_taxes_by_attribute["Sr. Citizen Bill"] track by $index' ng-bind='tax | currency'></td>
-		</tr>
-		<tr>
+		<!--<tr>
 			<th>Tax per share: </th>
 			<td ng-repeat='tax in property_taxes_by_attribute["Tax per share"] track by $index' ng-bind='tax | currency'></td>
+		</tr>-->
+		<tr>
+			<th>Senior Citizen Tax:</th>
+			<td class='tooltip' ng-repeat='tax in property_taxes_by_attribute["Sr Citizen Tax"] track by $index'>
+				<span ng-bind='(tax.base + tax.unit_3_burden) | currency'></span>
+				<span class='tooltiptext' ng-if='tax.unit_3_burden'>
+					<span ng-bind='tax.base | currency'></span>
+					 + <span ng-bind='tax.unit_3_burden | currency'></span> for Unit 3
+				</span>
+			</td>
 		</tr>
 		<tr>
-			<th>Tax per small unit:: </th>
-			<td ng-repeat='tax in property_taxes_by_attribute["Tax per small unit"] track by $index' ng-bind='tax | currency'></td>
-		</tr>
+			<th>Tax per small unit: </th>
+			<td class='tooltip' ng-repeat='tax in property_taxes_by_attribute["Tax per small unit"] track by $index'>
+				<span ng-bind='(tax.base + tax.unit_3_burden) | currency'></span>
+				<span class='tooltiptext' ng-if='tax.unit_3_burden'>
+					<span ng-bind='tax.base | currency'></span>
+					 + <span ng-bind='tax.unit_3_burden | currency'></span> for Unit 3
+				</span>
+			</td>
 		</tr>
 		<tr>
-			<th>Tax per medium unit:: </th>
-			<td ng-repeat='tax in property_taxes_by_attribute["Tax per medium unit"] track by $index' ng-bind='tax | currency'></td>
-		</tr>
+			<th>Tax per medium unit: </th>
+			<td class='tooltip' ng-repeat='tax in property_taxes_by_attribute["Tax per medium unit"] track by $index'>
+				<span ng-bind='(tax.base + tax.unit_3_burden) | currency'></span>
+				<span class='tooltiptext' ng-if='tax.unit_3_burden'>
+					<span ng-bind='tax.base | currency'></span>
+					 + <span ng-bind='tax.unit_3_burden | currency'></span> for Unit 3
+				</span>
+			</td>
 		</tr>
 		<tr>
-			<th>Tax per large unit:: </th>
-			<td ng-repeat='tax in property_taxes_by_attribute["Tax per large unit"] track by $index' ng-bind='tax | currency'></td>
+			<th>Tax per large unit: </th>
+			<td class='tooltip' ng-repeat='tax in property_taxes_by_attribute["Tax per large unit"] track by $index'>
+				<span ng-bind='(tax.base + tax.unit_3_burden) | currency'></span>
+				<span class='tooltiptext' ng-if='tax.unit_3_burden'>
+					<span ng-bind='tax.base | currency'></span> 
+					 + <span ng-bind='tax.unit_3_burden | currency'></span> for Unit 3
+				</span>
+			</td>
 		</tr>
+		<!--<tr ng-repeat='(size, tax_list) in official_calcs'>
+			<th>Official Calc per <span ng-bind='size'></span> unit: </th>
+			<td ng-repeat='tax in tax_list track by $index' ng-bind='tax | currency'></td>
+		</tr>-->
 		<tr>
 			<th>Actions: </th>
 			<td ng-repeat='id in property_taxes_by_attribute["Actions"] track by $index'><button ng-click='delete_tax(id)'>Delete Year</button></td>
+		</tr>
+		<tr ng-show='admin'>
+			<th>Primary bill: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Primary Bill"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		<tr ng-show='admin'>
+			<th>Sr Citizen bill: </th>
+			<td ng-repeat='tax in property_taxes_by_attribute["Sr Citizen Bill"] track by $index' ng-bind='tax | currency'></td>
+		</tr>
+		<tr ng-show='admin'>
+			<th>Improvement Value - Primary</th>
+			<td ng-repeat='imp_val_main in property_taxes_by_attribute["Main Improvement Value"] track by $index' ng-bind='imp_val_main | currency'></td>
+		</tr>
+		<tr ng-show='admin'>
+			<th>Land Value - Primary</th>
+			<td ng-repeat='land_val_main in property_taxes_by_attribute["Main Land Value"] track by $index' ng-bind='land_val_main | currency'></td>
+		</tr>
+		<tr ng-show='admin'>
+			<th>Improvement Value - Sr Citizen</th>
+			<td ng-repeat='imp_val_alt in property_taxes_by_attribute["Sr Citizen Improvement Value"] track by $index' ng-bind='imp_val_alt | currency'></td>
+		</tr>
+		<tr ng-show='admin'>
+			<th>Land Value - Sr Citizen</th>
+			<td ng-repeat='land_val_alt in property_taxes_by_attribute["Sr Citzen Land Value"] track by $index' ng-bind='land_val_alt | currency'></td>
 		</tr>
 	</table>
 	<hr>

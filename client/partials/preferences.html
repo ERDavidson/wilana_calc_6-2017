@@ -1,4 +1,7 @@
 <div ng-include="'./partials/includes/nav_pane.html'"></div>
 <div>
-	<h3>zFuture Preferences</h3>
+	<h3>zFuture Preferences</h3>>
+<div ng-if='admin'>
+<h3>Misc Admin Tools</h3>
+<p><input type='submit' ng-click='unit_transaction_reference_health()' value='Check model reference health'></p>
 </div>

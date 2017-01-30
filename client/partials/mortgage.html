@@ -1,10 +1,10 @@
 <div ng-include="'./partials/includes/nav_pane.html'"></div>
-<div ng-controller='mortgagesController'>
+<div>
 	<div class='options_bar'>
 		<div ng-class="{'show mortgage long_button': true, unpressed: (mortgage_index.indexOf(this_mortgage) != main_data.show), pressed: (mortgage_index.indexOf(this_mortgage) === main_data.show)}" ng-repeat='this_mortgage in mortgage_index track by $index' ng-click='show_mortgage($index)'>
 			<span class='button_label'><h3>Show <span ng-bind='this_mortgage.name'></span></h3></span>
 		</div>
-		<div ng-class="{'new mortgage long_button': true, unpressed: (!main_data.new), pressed: (main_data.new)}" ng-click='show_mortgage("new")'><h3 class='button_label'>New Mortgage</h3></div>
+		<div ng-class="{'new mortgage long_button': true, unpressed: (!main_data.new), pressed: (main_data.new)}" ng-click='show_mortgage("new")'><h3 class='button_label'>Add Mortgage</h3></div>
 	</div>
 	<div class='main_data' ng-show='main_data.show > -1'>
 		<table>

@@ -1,100 +1,111 @@
 <div ng-include="'./partials/includes/nav_pane.html'"></div>
-<div class='options_bar'>
-	<div class='filter_title'>
+<div>
+	<div class='options_bar'>
 		<h2>Filter Transactions</h2>
-		<h3><button ng-class="{'trans_filter filter_by': true, 'pressed': !collapsed_filter_options.unit, 'unpressed': collapsed_filter_options.unit}" ng-click='toggle_filter_options("unit")'><span class='button_label'>By Unit</span></button></h3>
-	</div>
-	<div ng-show='collapsed_filter_options.unit === false' class='button_box'>
-		<div ng-repeat='this_button in buttons | orderBy: "label"' ng-class="{ trans_filter: true, unit_button: true, 'pressed': (this_button.filter === true), 'unpressed': (this_button.filter === false)}" ng-click='toggle_button(this_button)'>
-			<h2 class='button_label' ng-bind='this_button.label'></h2>
+		<div class='filter_title'>
+			<h3 class='trans_filter'><span class='button_label'>By Unit:</span></h3>
+			<div class='button_box'>
+				<div ng-repeat='this_button in unit_buttons | orderBy: "label"' ng-class="{ 'trans_filter unit_button': true, 'pressed': ((proposed_filters.unit) && (proposed_filters.unit.indexOf(this_button.label) != -1)), 'unpressed': ((!proposed_filters.unit) || (proposed_filters.unit.indexOf(this_button.label) === -1))}" ng-click='toggle_proposed_filter("unit", this_button.label)'>
+					<h2 class='button_label' ng-bind='this_button.label'></h2>
+				</div>
+			</div>
 		</div>
-	</div>
-	<div class='filter_title'>
-		<h3><button ng-class="{'trans_filter filter_by': true, 'pressed': !collapsed_filter_options.type, 'unpressed': collapsed_filter_options.type}" ng-click='toggle_filter_options("type")'><span class='button_label'>By Type</span></button></h3>
-	</div>
-	<div ng-show='collapsed_filter_options.type === false'>
-		<div ng-repeat='this_button in type_buttons | orderBy: "label"' ng-class="{'trans_filter': true, 'long_button': true, 'pressed': (this_button.filter === true), 'unpressed': (this_button.filter === false)}" ng-click='toggle_button(this_button)'>
-			<h2 class='button_label' ng-bind='this_button.label'></h2>
+		<div class='filter_title'>
+			<h3 class='trans_filter'><span class='button_label'>By Type</span></h3>
+			<div ng-repeat='this_button in type_buttons | orderBy: "label"' ng-class="{'trans_filter long_button': true, 'pressed': ((proposed_filters.type) && (proposed_filters.type.indexOf(this_button.name) != -1)), 'unpressed': ((!proposed_filters.type) || (proposed_filters.type.indexOf(this_button.name) === -1))}" ng-click='toggle_proposed_filter("type", this_button.name)'>
+				<h2 class='button_label' ng-bind='this_button.label'></h2>pft: {{proposed_filters.type}}, tbn: {{this_button.name}}, pfttbn: {{proposed_filters.type.indexOf(this_button.name)}}
+			</div>
 		</div>
+		<div class='filter_title'>
+			<p class='trans_filter'>
+				<span class='button_label'>By Check #:</span>
+			</p>	
+			<input type='text' class='number_width' ng-model='proposed_filters.check_no'>
+		</div>
+		<div class='filter_title'>
+			<p class='trans_filter'>
+				<span class='button_label'>By Date:</span>
+			</p>
+			<p class='trans-filter'>Newer than: <input type='text' ng-model='proposed_filters.date.greater_than'>, Older than: <input type='text' ng-model='proposed_filters.date.less_than'></p>
+		</div>
+			<div class='filter_title'>
+			<p class='trans_filter'>
+				<span class='button_label'>By Amount:</span>
+			</p>
+			<p class='trans-filter'>More than: <input type='text' ng-model='proposed_filters.amount.greater_than'>, Less than: <input type='text' ng-model='proposed_filters.amount.less_than'></p>
+		</div>
+		<div class='filter_title'>
+			<h3 class='trans_filter'><span class='button_label'>By Keyword:</span></h3>
+			<input type='text' ng-model='proposed_filters.string'>
+		</div>
+		<input type='submit' ng-click='apply_filters()' value='Apply Filters'>
 	</div>
-	<div class='filter_title'>
-		<button ng-class="{'trans_filter filter_by': true, 'pressed': !active_filters.check_no, 'unpressed': active_filters.check_no}" ng-click='toggle_check_button()'>
-			<span class='button_label'>By Check #:</span>
-		</button>	
-		<input type='text' class='number_width' ng-model='potential_check_filter'>
+	<div class='main_data'>
+		<p ng-show='factory_response.message' ng-bind='factory_response.message'></p>
+		<table ng-show='((transactions_and_dues_index.length > 0) && !factory_response.message)'>
+			<tr>
+				<th>Sum of displayed transactions: </th>
+				<th ng-bind='factory_response.sums.sum'></th>
+			</tr>
+		</table>
+		<p>Filters Applied: <span ng-repeat='(this_criterion, these_values) in active_filters'><span ng-bind='this_criterion'></span>: <span ng-bind='these_values'></span> | </span></p>
+		<table ng-show='((transactions_and_dues_index.length > 0) && !factory_response.message)'>
+			<caption><h2>Transactions Index</h2> (Displaying <span ng-bind='filtered_transactions.length'></span> <span ng-show='(filtered_transactions.length === 500)'>of at least 500</span> matching entries)</caption>
+			<tr>
+				<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("_uni")}' ng-click='sort_by("_unit.number")'>
+					<span ng-show='sort_criterion.search("_") === 0'> ^ </span><span ng-show='sort_criterion.search("-_") === 0'> v </span>Unit
+				</button></th>
+				<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("date")}' ng-click='sort_by("date")'>
+					<span ng-show='sort_criterion.search("d") === 0'> ^ </span><span ng-show='sort_criterion.search("-d") === 0'> v </span>Date
+				</button></th>
+				<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("type")}' ng-click='sort_by("type")'>
+					<span ng-show='sort_criterion.search("t") === 0'> ^ </span><span ng-show='sort_criterion.search("-t") === 0'> v </span>Type
+				</button></th>
+				<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("amou")}' ng-click='sort_by("amount")'>
+					<span ng-show='sort_criterion.search("a") === 0'> ^ </span><span ng-show='sort_criterion.search("-a") === 0'> v </span>Amount
+				</button></th>
+				<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("chec")}' ng-click='sort_by("check_number")'>
+					<span ng-show='sort_criterion.search("c") === 0'> ^ </span><span ng-show='sort_criterion.search("-c") === 0'> v </span>Chk #
+				</button></th>
+				<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("note")}' ng-click='sort_by("notes")'>
+					<span ng-show='sort_criterion.search("n") === 0'> ^ </span><span ng-show='sort_criterion.search("-n") === 0'> v </span>Notes
+				</button></th>
+				<th>Actions</th>
+			</tr>
+			<!--  filter: {type: active_filters.type} : or_filter  | filter: {date: active_filters.date} | filter: {amount: active_filters.amount}| |filter: {$: active_filters.string} } -->
+			<tr ng-repeat='this_transaction in transactions_and_dues_index | filter: {unit_number: active_filters.unit} : or_filter | filter: {check_no: active_filters.check_no} | limitTo: 500 | orderBy: sort_criterion as filtered_transactions'>
+				<td>
+					<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.unit_number'></span>
+					<input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction._unit.number'>
+				</td>
+				<td>
+					<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.date | date'></span>
+	      			<input type='text' class='timestamp' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.date'>
+				</td>
+				<td>
+					<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.type'></span>
+	     			<select ng-options='type for type in allowed_types' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.type'></select>
+				</td>
+				<td>
+					<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='(this_transaction.amount / 100) | currency'></span>
+	       			<input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.amount'>
+				</td>
+				<td>
+					<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.check_number'></span>
+	    		    <input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-disabled='updated_transaction.type!="credit"' ng-model='updated_transaction.check_number'>
+				</td>
+				<td>
+					<span class='short_message' ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.notes'></span>
+	        		<input type='text' class='short_message' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.notes'>
+				</td>
+				 <td>
+	    		    <input type='submit' ng-show='edit_lock.id != this_transaction._id' ng-disabled='edit_lock.type != false' ng-click='edit_transaction(this_transaction)' value='Edit'>
+	    		    <input type='submit' ng-show='edit_lock.id != this_transaction._id' ng-disabled='edit_lock.type != false' ng-click='prepare_delete(this_transaction._id)' value='Delete'>
+	        		<input type='submit' ng-show='edit_lock.id === this_transaction._id' ng-click='cancel()'' value='Cancel'>
+	        		<input type='submit' ng-show='(edit_lock.type === "edit") && (edit_lock.id === this_transaction._id)' ng-click='update_transaction(updated_transaction, this_transaction._id)' value='Submit Updated Transaction'>
+	        		<input type='submit' ng-show='(edit_lock.type === "delete") && (edit_lock.id === this_transaction._id)' ng-click='delete_transaction(this_transaction, unit)' value='Confirm Delete Transaction'>
+	      		</td>
+			</tr>
+		</table>
 	</div>
-	<div class='filter_title'>
-		<button ng-class="{'trans_filter filter_by': true, 'pressed': active_filters.date"
-	<input type='text' ng-model='potential_string_filter'>
-	<div class='filter_title'>
-		<button ng-class="{'trans_filter filter_by': true, 'pressed': !active_filters.string, 'unpressed': active_filters.string}" ng-click='toggle_string_button()'>
-		<span class='button_label'>By Above Text</span></button>
-	</div>
-</div>
-<div class='main_data' ng-controller='transactionsIndexController'>
-	<p ng-show='factory_response.message' ng-bind='factory_response.message'></p>
-	<table ng-show='(factory_response.filtered_transactions.length > 0) && !factory_response.message'>
-		<tr>
-			<th>Sum of displayed transactions: </th>
-			<th ng-bind='factory_response.sums.sum'></th>
-		</tr>
-	</table>
-	Active Angular filters: <span ng-repeat='(this_criterion, these_values) in filters'>Criterion: <span ng-bind='this_criterion'></span>, Values: <span ng-bind='these_values'></span></span>
-	<table ng-show='(factory_response.filtered_transactions.length > 0) && !factory_response.message'>
-		<caption>Transactions Index (<span ng-bind='factory_response.filtered_transactions.length'></span> matching entries)</caption>
-		<tr>
-			<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("_uni")}' ng-click='sort_by("_unit.number")'>
-				<span ng-show='sort_criterion.search("_") === 0'> ^ </span><span ng-show='sort_criterion.search("-_") === 0'> v </span>Unit
-			</button></th>
-			<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("date")}' ng-click='sort_by("date")'>
-				<span ng-show='sort_criterion.search("d") === 0'> ^ </span><span ng-show='sort_criterion.search("-d") === 0'> v </span>Date
-			</button></th>
-			<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("type")}' ng-click='sort_by("type")'>
-				<span ng-show='sort_criterion.search("t") === 0'> ^ </span><span ng-show='sort_criterion.search("-t") === 0'> v </span>Type
-			</button></th>
-			<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("amou")}' ng-click='sort_by("amount")'>
-				<span ng-show='sort_criterion.search("a") === 0'> ^ </span><span ng-show='sort_criterion.search("-a") === 0'> v </span>Amount
-			</button></th>
-			<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("chec")}' ng-click='sort_by("check_number")'>
-				<span ng-show='sort_criterion.search("c") === 0'> ^ </span><span ng-show='sort_criterion.search("-c") === 0'> v </span>Chk #
-			</button></th>
-			<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("note")}' ng-click='sort_by("notes")'>
-				<span ng-show='sort_criterion.search("n") === 0'> ^ </span><span ng-show='sort_criterion.search("-n") === 0'> v </span>Notes
-			</button></th>
-			<th>Actions</th>
-		</tr>
-		<tr ng-repeat='this_transaction in factory_response.filtered_transactions | filter: {unit: filters.unit} : or_filter | filter: {type: filters.type} : or_filter | filter: {$: filters.string} | filter: {check_no: filters_check_no} | limitTo: 1000 | orderBy: sort_criterion'>
-			<td>
-				<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction._unit.number'></span>
-				<input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction._unit.number'>
-			</td>
-			<td>
-				<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.date | date'></span>
-      			<input type='text' class='timestamp' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.date'>
-			</td>
-			<td>
-				<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.type'></span>
-     			<select ng-options='type for type in allowed_types' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.type'></select>
-			</td>
-			<td>
-				<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='(this_transaction.amount / 100) | currency'></span>
-       			<input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.amount'>
-			</td>
-			<td>
-				<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.check_number'></span>
-    		    <input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-disabled='updated_transaction.type!="credit"' ng-model='updated_transaction.check_number'>
-			</td>
-			<td>
-				<span class='short_message' ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.notes'></span>
-        		<input type='text' class='short_message' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction.notes'>
-			</td>
-			 <td>
-    		    <input type='submit' ng-show='edit_lock.id != this_transaction._id' ng-disabled='edit_lock.type != false' ng-click='edit_transaction(this_transaction)' value='Edit'>
-    		    <input type='submit' ng-show='edit_lock.id != this_transaction._id' ng-disabled='edit_lock.type != false' ng-click='prepare_delete(this_transaction._id)' value='Delete'>
-        		<input type='submit' ng-show='edit_lock.id === this_transaction._id' ng-click='cancel()'' value='Cancel'>
-        		<input type='submit' ng-show='(edit_lock.type === "edit") && (edit_lock.id === this_transaction._id)' ng-click='update_transaction(updated_transaction, this_transaction._id)' value='Submit Updated Transaction'>
-        		<input type='submit' ng-show='(edit_lock.type === "delete") && (edit_lock.id === this_transaction._id)' ng-click='delete_transaction(this_transaction, unit)' value='Confirm Delete Transaction'>
-      		</td>
-		</tr>
-	</table>
 </div>

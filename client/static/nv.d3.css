@@ -272,7 +272,7 @@ svg.nvd3-svg {
 
 
 .nvd3 text {
-    font: normal 12px Arial, sans-serif;
+    font: normal 16px Arial, sans-serif;
 }
 
 .nvd3 .title {
@@ -557,7 +557,7 @@ svg.nvd3-svg {
     padding: 8px;
 }
 
-.nvtooltip h3 {
+.nvtooltip {
     margin: 0;
     padding: 4px 14px;
     line-height: 18px;
