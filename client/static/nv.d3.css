@@ -59,11 +59,11 @@
 }
 
 .nvd3 .nv-bars text {
-    fill: rgba(0,0,0,0);
+    fill: rgba(180,180,180,1);
 }
 
 .nvd3 .nv-bars .hover text {
-    fill: rgba(0,0,0,1);
+    fill: rgba(77,77,77,1);
 }
 
 .nvd3 .nv-multibar .nv-groups rect,
@@ -84,8 +84,8 @@
 .nvd3 .nv-discretebar .nv-groups text,
 .nvd3 .nv-multibarHorizontal .nv-groups text {
     font-weight: bold;
-    fill: rgba(0,0,0,1);
-    stroke: rgba(0,0,0,0);
+    fill: rgba(0,0,88,1);
+    stroke: rgba(69,0,0,1);
 }
 
 /* boxplot CSS */

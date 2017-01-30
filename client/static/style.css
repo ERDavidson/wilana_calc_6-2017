@@ -658,6 +658,13 @@ button{
 	padding-top: 8px;
 	padding-bottom: 13px;
 }
+.nav_submenu.ng-enter{
+	transition 0.5s;
+	height: 0px;
+}
+.nav_submenu.ng-enter-active{
+	height: 42px;
+}
 .new.mortgage.long_button{
 	height: 40px;
 	padding-top: 28px;
@@ -667,7 +674,7 @@ button{
 	float: right;
 	width: 1100px;
 	height: 700px;
-	background-color: rgb(15,12,10);
+	background-color: rgb(118,110,97);
 	margin: 15px;
 	padding: 25px;
 	padding-right: 125px;
