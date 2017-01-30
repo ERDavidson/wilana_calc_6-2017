@@ -142,23 +142,4 @@
 			<textarea ng-model='new_balance_history.values' rows='150' cols='30'></textarea>
 		</div>
 	</form>
-	<hr>
-	<div class='new_history_box'>
-		<table>
-			<caption>Original entry:</caption>
-			<tr ng-repeat='date in this_new_history.dates track by $index'>
-				<td ng-bind='date'></td>
-				<td ng-bind='this_new_history.values[$index]'></td>
-			</tr>
-		</table>
-	</div>
-	<div class='new_history_box'>
-		<table>
-			<caption>After processing:</caption>
-			<tr ng-repeat='date in daily_result.dates track by $index'>
-				<td ng-bind='date'></td>
-				<td ng-bind='daily_result.values[$index]'></td>
-			</tr>
-		</table>
-	</div>
 </div>
