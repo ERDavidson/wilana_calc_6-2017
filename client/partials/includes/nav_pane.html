@@ -1,26 +1,24 @@
 <div class='header_pane' ng-controller='appController'>
-	<div class='session_box'>
-		<div class='not_block'>
-			<h3 ng-show='false' ng-bind='welcome()'></h3>
-			<div ng-show='!logged_in' class='login'>
-				<h3>Please log in.</h3>
-				<hr>
-				<table>
-					<tr>
-						<td>Unit #: </td>
-						<td><select ng-model='login_info.unit' class='credentials' ng-options='user_object.unit as user_object.unit for (user, user_object) in user_list'></select></td>
-					</tr>
-					<tr>
-						<td>Password: </td>
-						<td><input type='password' class='credentials' ng-keyup="$event.keyCode == 13 && login(login_info)" ng-model='login_info.pw'></td>
-					</tr>
-				</table>
-				<input type='submit' class='bottom login_button' ng-click='login(login_info)' value='Log In'>
-				<p ng-if='false'>Or with Google:</p>
-				<div class='gin_wrapper' ng-if='false' ng-click='load_gin()'>
-					<div class="g-signin2" data-onsuccess="onSignIn"></div>
-				</div>
-			</div>
+	<div class='session_box not_block'>
+		<h3 ng-show='false' ng-bind='welcome()'></h3>
+		<div ng-show='!logged_in' class='login'>
+			<h3>Please log in.</h3>
+			<hr>
+			<table>
+				<tr>
+					<td>Unit #: </td>
+					<td><select ng-model='login_info.unit' class='credentials' ng-options='user_object.unit as user_object.unit for (user, user_object) in user_list'></select></td>
+				</tr>
+				<tr>
+					<td>Password: </td>
+					<td><input type='password' class='credentials' ng-keyup="$event.keyCode == 13 && login(login_info)" ng-model='login_info.pw'></td>
+				</tr>
+			</table>
+			<input type='submit' class='bottom login_button' ng-click='login(login_info)' value='Log In'>
+			<p>Or with Google:</p>
+			<div class='not_block'>standard version: <div class="g-signin2" data-onsuccess="onSignIn"></div></div>
+			<div class='not_block'>old alternate that didn't work:<input type='submit' ng-click='googlelogintest()' value='run test'></div>
+			<div class='not_block'>load_gin method:<div class='gin_wrapper' ng-click='load_gin()'></div></div>
 		</div>
 		<div ng-show='!logged_in' class='login'>
 			<h3>Or register:</h3>
@@ -41,15 +39,11 @@
 			</table>
 			<input type='submit' class='slightly_small_text login_button' ng-disabled='!new_user.unit || !new_user.pw' ng-click='register(new_user)' value='Register New User'>
 		</div>
-		<div class='login' ng-if='false'>
-			<h3>test google login:</h3>
-			<input type='submit' ng-click='googlelogintest()' value='run test'>
-		</div>
 		<div ng-show='logged_in'>
 			<p>
-					<input type='submit' ng-click='logout()' value='Log Out (standard)'>
-					<input ng-if='false' type='submit' ng-click='logout_google()' value='Log Out (via Google)'>
-					<input type='submit' ng-show='!edit_user' ng-click='edit_user = true' value='Edit Password'>
+				<input type='submit' ng-click='logout()' value='Log Out (standard)'>
+				<input type='submit' ng-click='logout_google()' value='Log Out (via Google)'>
+				<input type='submit' ng-show='!edit_user' ng-click='edit_user = true' value='Edit Password'>
 			</p>
 			<form ng-show='edit_user'>
 				<p>
@@ -65,45 +59,48 @@
 		</div>
 	</div>
 	<div class='nav_box'>
-		<h1 class='center_horiz'>Wilana Unit Account Tools</h1>
+		<h1 class='center_horiz'>Wilana Cooperative</h1>
 		<div class='link_line center_horiz' ng-show='current_user'>
 			<a ng-class="{'current_view': nav_topic === 'unit_accounts'}" href="" ng-mouseover='new_nav_topic("unit_accounts")'>Unit Accounts</a> &nbsp&nbsp|&nbsp&nbsp 
 			<a ng-class="{'current_view': nav_topic === 'budget_spending'}" href="" ng-mouseover='new_nav_topic("budget_spending")'>Budget & Spending</a> &nbsp&nbsp|&nbsp&nbsp 
 			<a ng-class="{'current_view': nav_topic === 'directory_docs'}" href="" ng-mouseover='new_nav_topic("directory_docs")'>Directory & Documents</a> &nbsp&nbsp|&nbsp&nbsp 
-			<a ng-class="{'current_view': nav_topic === 'feedback_prefs'}" href="" ng-mouseover='new_nav_topic("feedback_prefs")'>Feedback & Preferences</a>
+			<a ng-class="{'current_view': nav_topic === 'feedback_prefs'}" href="" ng-mouseover='new_nav_topic("feedback_prefs")'>Site Tools</a>
 		</div>
 		<div class='link_line_2 center_horiz' ng-show='current_user'>
-			<div class='link_line_2_folders'>
-			<span class='nav_submenu' ng-show='nav_topic === "unit_accounts"'>
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/matrix'}" href='#/matrix/'>Dues Rates</a> &nbsp&nbsp|&nbsp&nbsp 
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/reports'}" href='#/reports/'>Current Balance</a> &nbsp&nbsp|&nbsp&nbsp 
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/transactions'}" href='#/transactions/'>Search Transactions</a>
-				<span ng-show='admin'>
-					 &nbsp&nbsp|&nbsp&nbsp <a ng-class="{'link_tab': true, 'current_view': this_view === '/transactions/new'}" href='#/transactions/new'>New Transactions</a>
-				</span>
-			</span>
-			<span class='nav_submenu' ng-show='nav_topic === "budget_spending"'>
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/taxes'}" href='#/taxes/'>Taxes</a> &nbsp&nbsp|&nbsp&nbsp 
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/mortgage'}" href='#/mortgage/'>Blanket Mortgage</a> &nbsp&nbsp|&nbsp&nbsp 
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/budget'}" href='#/budget/'>Current Budget</a> &nbsp&nbsp|&nbsp&nbsp
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/spending_history'}" href='#/spending_history/'>Spending History</a>  
-			</span>
-			<span class='nav_submenu' ng-show='nav_topic === "directory_docs"'>
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/directory'}" href='#/units/'>Unit Directory</a> &nbsp&nbsp|&nbsp&nbsp 
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/documents'}" href='#/documents/'>Governing Documents & Useful Links</a>
-			</span>
-			<span class='nav_submenu' ng-show='nav_topic === "feedback_prefs"'>
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/feedback'}" href='#/feedback/'>Feedback</a> &nbsp&nbsp|&nbsp&nbsp 
-				<a ng-class="{'link_tab': true, 'current_view': this_view === '/preferences'}" href='#/preferences/'>Preferences & Email Reminders</a>
-			</span>
+			<div class='link_line_2_folder_container' ng-switch on='nav_topic'>
+				<div class='link_line_2_folders' ng-switch-when="unit_accounts">
+				<!--<span class='nav_submenu' ng-show='nav_topic === "unit_accounts"'>-->
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/matrix'}" href='#/matrix/'>Dues Rates</a> &nbsp&nbsp|&nbsp&nbsp 
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/reports'}" href='#/reports/'>Current Balance</a> &nbsp&nbsp|&nbsp&nbsp 
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/transactions'}" href='#/transactions/'>Search Transactions</a>
+					<span ng-show='admin'>
+						 &nbsp&nbsp|&nbsp&nbsp <a ng-class="{'link_tab': true, 'current_view': this_view === '/transactions/new'}" href='#/transactions/new'>New Transactions</a>
+					</span>
+				</div>
+				<div class='link_line_2_folders' ng-switch-when="budget_spending">
+				<!--<span class='nav_submenu' ng-show='nav_topic === "budget_spending"'>-->
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/taxes'}" href='#/taxes/'>Taxes</a> &nbsp&nbsp|&nbsp&nbsp 
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/mortgage'}" href='#/mortgage/'>Blanket Mortgage</a> &nbsp&nbsp|&nbsp&nbsp 
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/budget'}" href='#/budget/'>Current Budget</a> &nbsp&nbsp|&nbsp&nbsp
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/spending_history'}" href='#/spending_history/'>Spending History</a>  
+				</div>
+				<div class='link_line_2_folders' ng-switch-when="directory_docs">
+				<!--<span class='nav_submenu' ng-show='nav_topic === "directory_docs"'>-->
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/directory'}" href='#/units/'>Unit Directory</a> &nbsp&nbsp|&nbsp&nbsp 
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/documents'}" href='#/documents/'>Governing Documents & Useful Links</a>
+				</div>
+				<div class='link_line_2_folders' ng-switch-when="feedback_prefs">
+				<!--<span class='nav_submenu' ng-show='nav_topic === "feedback_prefs"'>-->
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/feedback'}" href='#/feedback/'>Feedback</a> &nbsp&nbsp|&nbsp&nbsp 
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/preferences'}" href='#/preferences/'>Preferences & Email Reminders</a>
+				</div>
 			</div>
 		</div>
-		<!--<h2 class='center_horiz' ng-bind='this_page_title'></h2>-->
 	</div>
 	<div class='log_box'>
 		<table class='log_table'>
 			<caption class='log_caption'>
-				<span>Message Log</span
+				<span>Message Log</span>
 			</caption>
 			<tr>
 				<th class='timestamp'>Time</th>
@@ -114,5 +111,5 @@
 				<td class='message' ng-bind='message.text'></td>
 			</tr>
 		</table>
-	<div>
+	</div>
 </div>

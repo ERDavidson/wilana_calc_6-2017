@@ -118,28 +118,38 @@ wc3_services.factory('userFactory', ['$http', '$rootScope', function($http, $roo
 	}
 	return factory;
 }]);
-wc3_services.factory('balanceHistoryFactory', ['$http', 'userFactory', function($http, userFactory){
+wc3_services.factory('balanceHistoryFactory', ['$http', 'toolFactory', 'userFactory', function($http, toolFactory, userFactory){
 	var factory = {};
 	factory.index = function(callback){
 		$http.post('/balance_histories').success(function(result){
 			if (result.error){
 				callback(result);
 			} else {
-				var desired_histories = {"Daily Wilana Checking": true, "Daily Wilana Reserve Fund": true, "Daily Wilana Blanket Mortgage": true};
+				var desired_histories = {"Daily Wilana Reserve Fund": true, "Daily Wilana Checking": true, "Daily Wilana Blanket Mortgage": true};
 				var these_histories = [];
-				var these_colors = ["#3060cc", "#aaaa60", "#cc3060"];
-				for (index=0;index<result.history_index.length;index++){
-					if (desired_histories[result.history_index[index].account_name]){
-						var index_for_chart = {key: result.history_index[index].account_name, color: these_colors[index], values: []};
+				var balanceHistoryColors = toolFactory.make_rainbowSync({count: 3, groups: 0});
+				var these_colors = {"Daily Wilana Reserve Fund": balanceHistoryColors.color_strings[0], "Daily Wilana Checking": balanceHistoryColors.color_strings[1], "Daily Wilana Blanket Mortgage": "#cc3060"};
+				var net_balance = {"key": "Net Account Balance", "color": balanceHistoryColors.color_strings[2], "values": [], "type": "line"};
+				for (index=0;index<result.history_index.length;index++){					//iterate through each account returned by controller (there are a few versions - the three indicated above have identical daily resolutions).
+					if (desired_histories[result.history_index[index].account_name]){		//if it's an account I want to display
+						var this_account_name = result.history_index[index].account_name;
+						var index_for_chart = {key: this_account_name, color: these_colors[this_account_name], values: [], type: "stackedArea"};	//set up a chart data series with name & color & a slot for data
 						for (i=0;i<result.history_index[index].dates.length;i++){
 							var this_date = new Date(result.history_index[index].dates[i]);
 							var this_value = result.history_index[index].values[i];
-							index_for_chart.values.push([this_date, this_value]);
+							index_for_chart.values.push([this_date, this_value]);				//create a [date, value] pair for each day in the relevant time span
+							if (!net_balance.values[(index_for_chart.values.length - 1)]){				//if a slot for this date does not yet exist on the net balance series, create it.
+								net_balance.values[(index_for_chart.values.length - 1)] = [this_date, 0];			//and then update it with the latest balance value.
+							}
+							net_balance.values[(index_for_chart.values.length - 1)][1] += this_value;		//and then update it with the latest balance value.
 						}
 						these_histories.push(index_for_chart);
 						console.log("Added history " + index_for_chart.key + " of length " + index_for_chart.values.length);
 					}
 				}
+				console.log("About to push net balance series to factory output: ");
+				console.log(net_balance);
+				these_histories.push(net_balance);
 				console.log("factory returning histories:");
 				console.log(these_histories);
 				callback({histories_for_chart: these_histories});
@@ -155,7 +165,7 @@ wc3_services.factory('balanceHistoryFactory', ['$http', 'userFactory', function(
 	}
 	return factory;
 }]);
-wc3_services.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mortgageFactory', 'transactionFactory', 'userFactory', function($http, propertyTaxFactory, mortgageFactory, transactionFactory, userFactory){
+wc3_services.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mortgageFactory', 'toolFactory', 'transactionFactory', 'userFactory', function($http, propertyTaxFactory, mortgageFactory, toolFactory, transactionFactory, userFactory){
 	var factory = {};
 	factory.index = function(callback){
 		$http.post('/budget_lines').success(function(new_index){
@@ -189,10 +199,11 @@ wc3_services.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mort
 			}
 			var expense_chart_data = [];
 			var income_chart_data = [];
+			var supercategory_colors = toolFactory.make_rainbowSync({count: 4, groups: 0});
 			var additional_data = {"maintenance_subcategories": [], "utilities_subcategories": [], "other_expenses_subcategories": []};
-			var maintenance_data = {"key": "Maintenance", "color": "#cc7722", "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
-			var utilities_data = {"key": "Utilities", "color": "#bbbbbb", "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
-			var other_expenses_data =  {"key": "Other Expenses", "color": "#553322", "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
+			var maintenance_data = {"key": "Maintenance", "color": supercategory_colors.color_strings[0], "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
+			var utilities_data = {"key": "Utilities", "color": supercategory_colors.color_strings[1], "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
+			var other_expenses_data =  {"key": "Other Expenses", "color": supercategory_colors.color_strings[2], "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
 			var utilities_categories = ["Sewer", "Gas", "Garbage", "Water", "Electricity", "Water Meter"];
 			var other_expenses_categories = ["Cleaning", "Building Supplies", "Garage Rent", "Tax Prep", "Legal Fees", "Fire Inspections", "Bank Charges", "Other Fees", "Sr Citizen Tax Refund"];
 			var utilities_divert = false;
@@ -202,7 +213,9 @@ wc3_services.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mort
 			var years_to_show =  [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017];
 			//expense_chart_data[0] = {key: "Mortgage Total", values: []};  //really ugly, but budgeted value will be inserted later in this method and requires a known index to insert into.  And the rest of the mortgage data won't get inserted until it's in the controller.
 			expense_chart_data[0] = propertyTaxFactory.brief_index.for_chart; // this must have a fixed index so that insertion of current budget value knows where to go later on - no, not any more, but can't hurt
+			expense_chart_data[0].color = supercategory_colors.color_strings[3];
 			expenses_by_supercategory.Taxes["Property Tax"] = propertyTaxFactory.brief_index.for_table;
+			var category_colors = toolFactory.make_rainbowSync({count: new_index.new_index.length, groups: 0});
 			for (i=0;i<new_index.new_index.length;i++){
 				var this_category = new_index.new_index[i];	
 				//if (this_category.category.search("Budget") != -1){
@@ -214,12 +227,12 @@ wc3_services.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mort
 				//		console.log("added 2017 budget to property taxes for chart");
 				//	}
 				//} else {
-				var category_data = {"key": this_category.category, "values": []};
-				if (category_data["key"] === "Income Tax"){
+				var category_data = {"key": this_category.category, "color": category_colors.color_strings[i], "values": []};
+				/*if (category_data["key"] === "Income Tax"){
 					category_data["color"] = "#111111";
 				} else if (category_data["key"] === "Building Insurance"){
 					category_data["color"] = "#4444bb";
-				}
+				}*/
 				if (this_category.values){				//this_category is the db index item.  category_data is the output under construction
 					for  (index in years_to_show){
 						if (this_category.values[years_to_show[index]]){
@@ -257,6 +270,10 @@ wc3_services.factory('expenditureFactory', ['$http', 'propertyTaxFactory', 'mort
 					}
 				//}
 				}
+			}			
+			var income_colors = toolFactory.make_rainbowSync({count: income_chart_data.length, groups: 0});
+			for (y=0;y<income_colors.color_strings.length;y++){
+				income_chart_data[y].color = income_colors.color_strings[y];
 			}
 			expense_chart_data.push(maintenance_data);
 			expense_chart_data.push(utilities_data);
@@ -565,7 +582,7 @@ wc3_services.factory('matrixFactory', ['$http', 'unitFactory', 'userFactory', fu
 	};
 	return factory;
 }]);
-wc3_services.factory('mortgageFactory', ['$http', function($http){
+wc3_services.factory('mortgageFactory', ['$http', 'toolFactory', function($http, toolFactory){
 	var factory = {};
 	var today = new Date();
 	var origin_date = new Date('01/01/2007');
@@ -613,6 +630,7 @@ wc3_services.factory('mortgageFactory', ['$http', function($http){
 		})
 	}
 	factory.index_by_year = function(callback){
+		var mortgage_colors = toolFactory.make_rainbowSync({count: 3, groups: 0});
 		var mortgage_index_by_year = {
 			"for_table": {
 				"Mortgage": {
@@ -623,15 +641,15 @@ wc3_services.factory('mortgageFactory', ['$http', function($http){
 			},
 			"for_chart": [{
 				"key": "Mortgage Principal", 
-				"color": "#668866",
+				"color": mortgage_colors.color_strings[0],
 				"values": []  // this list's contents should be sub-lists instead: [year, amount]
 			}, {
 				"key": "Mortgage Interest",
-				"color": "#886666",
+				"color": mortgage_colors.color_strings[1],
 				"values": []
 			}, {
 				"key": "Mortgage Total",
-				"color": "#666688",
+				"color": mortgage_colors.color_strings[2],
 				"values": []
 			}]
 		};
@@ -933,6 +951,53 @@ wc3_services.factory('reportFactory', ['$http', '$filter', 'matrixFactory', 'uni
 			})
 		}
 	}
+	factory.format_for_chart = function(unit_number, full_history){
+		var this_data = {key: "Unit " + unit_number, values: []};
+		console.log("full_history in format_for_chart:");
+		console.log(full_history);
+		for (i=0;i<full_history.transactions.length;i++){
+			var this_date = new Date(full_history.transactions[i].date);
+			var this_balance = Number(full_history.balances[i]);
+			var this_data_point = [this_date, this_balance];
+			this_data.values.push([this_date, this_balance]);
+		}
+		var chart_options = {
+			"chart": {
+				"type": "lineChart",
+				"height": 720,
+				"width": 1150,
+				"margin": {
+					"top": 20,
+					"right": 40,
+					"bottom": 30,
+					"left": 120
+				},
+				"x": function(d){ return d[0];},
+				"y": function(d){ return d[1];},
+				"duration": 100,
+				"useInteractiveGuideline": true,
+				"xAxis": {
+					"showMaxMin": true,
+					tickFormat: function(d){
+						return d3.time.format('%x')(new Date(d));
+					}
+				},
+				"yAxis": {
+					tickFormat: function(d){
+						return ("$" + d3.format(',.2f')(d));
+					}
+				},
+				"zoom": {
+					"enabled": false
+				}
+			}
+
+		};
+		console.log(chart_options);
+		console.log("format_for_chart is about to return: ");
+		console.log(this_data);
+		return {data: this_data, options: chart_options};
+	}
 	factory.full_history = function(unit, callback){
 		var today = new Date();
 		var months = (today.getFullYear() - 2011) * 12 + today.getMonth() + 1;
@@ -976,7 +1041,8 @@ wc3_services.factory('reportFactory', ['$http', '$filter', 'matrixFactory', 'uni
 				}
 				this_full_history['balances'].reverse();
 				this_full_history['transactions'].reverse();
-				callback({unit: unit, full_history: this_full_history, current_balance: this_full_history['balances'][0], initial_balance: unit_result.unit.initial_balance.toFixed(2)});
+				var history_for_chart = factory.format_for_chart(unit, this_full_history);
+				callback({unit: unit, full_history: this_full_history, current_balance: this_full_history['balances'][0], initial_balance: unit_result.unit.initial_balance.toFixed(2), chart_data: history_for_chart.data, chart_options: history_for_chart.options});
 			})
 		})
 	}
@@ -1157,6 +1223,94 @@ wc3_services.factory('unitFactory', ['$http', 'userFactory', function($http, use
 				})
 			}
 		});
+	}
+	return factory;
+}]);
+wc3_services.factory('toolFactory', ['userFactory', function(userFactory){
+	var factory = {};
+	factory.random_indices = function(these_criteria){
+		console.log("starting random_indices with arguments: " + JSON.stringify(these_criteria));
+		var groups = Number(these_criteria.groups);
+		var delta =  Math.floor(255/(Number(these_criteria.count)*2));
+		//var delta =  Math.floor(250/(Number(these_criteria).count)); 
+		if (!(groups === 0 || groups === 2 || groups === 3)){ // don't miss the exclamation point up front
+			console.log("I think group count is invalid");
+			return {error: "invalid group count requested"};
+		} else {
+			var initial_indices = [];
+			for (i=0;i<3;i++){
+				initial_indices.push(Math.floor(Math.random()*these_criteria.count));
+			}
+			console.log("the nth steps for red, green, and blue starting values (initial_indices): " + initial_indices);
+			/*var group_breaks = 0;
+			for(x=0;x<3;x++){
+				if (initial_indices[x] > (these_criteria.count / 2)){ // reactivate here if I want to implement group breaks 
+					group_breaks += 1;
+				}
+			}*/ 
+			/*if (initial_indices[0] != initial_indices[1]){
+				group_breaks += 1;
+			}
+			if (initial_indices[1] != initial_indices[2]){
+				group_breaks += 1;
+			}
+			if (initial_indices[2] != initial_indices[0]){
+				group_breaks += 1;					// group_breaks will end up either 0, 2, or 3.  Weird but works
+			}										// if I want to get reliably zero groups though, I'll need to ensure that starting index is never within spitting distance of rolling over.*/
+			/*if (group_breaks != Number(these_criteria.groups)){
+				console.log('Repeating random_indices because I needed ' + these_criteria.groups + ' and got ' + group_breaks);
+				return factory.random_indices(these_criteria);
+			} else {*/
+			console.log("returning " + initial_indices + " from random_indices");
+			return initial_indices;
+			//}
+		}
+	}
+	factory.make_rainbow = function(these_criteria, callback){ // these_criteria must be in format {count: <number>, groups: <number>}
+		console.log('starting factory make_rainbow with arguments: ' + JSON.stringify(these_criteria));
+		var delta =  Math.floor(255/(Number(these_criteria.count)*1.33));
+		console.log("Intended delta for space between rgb values: " + delta);
+		var initial_indices = factory.random_indices(these_criteria);
+		if (initial_indices.error){
+			callback({error: initial_indices});
+		}
+		var base = [];
+		for (i=0;i<3;i++){
+			base.push(Math.floor(Math.random()*delta));
+		}
+		console.log("starting seed value (< delta): " + base);
+		var these_colors = [];
+		var these_color_strings = [];
+		for (i=0;i<these_criteria.count;i++){
+			these_colors.push({"rosso": (base[0] + delta*(initial_indices[0]+=1))%255, "verde": (base[1] + delta*(initial_indices[1]+=1))%255, "azzuro": (base[2] + delta*(initial_indices[2]+=1))%255});
+			these_color_strings.push('rgb(' + (base[0] + delta*(initial_indices[0]))%255 + ', ' + (base[1] + delta*(initial_indices[1]))%255 + ', ' + (base[2] + delta*(initial_indices[2]))%255 + ')');
+		}
+		console.log("returning these_colors from factory");
+		console.log(these_colors);
+		callback({colors: these_colors, color_strings: these_color_strings});
+	}
+	factory.make_rainbowSync = function(these_criteria){ // these_criteria must be in format {count: <number>, groups: <number>}
+		console.log('starting factory make_rainbow with arguments: ' + JSON.stringify(these_criteria));
+		var delta =  Math.floor(255/(Number(these_criteria.count)*1.33));
+		console.log("Intended delta for space between rgb values: " + delta);
+		var initial_indices = factory.random_indices(these_criteria);
+		if (initial_indices.error){
+			return {error: initial_indices};
+		}
+		var base = [];
+		for (i=0;i<3;i++){
+			base.push(Math.floor(Math.random()*delta));
+		}
+		console.log("starting seed value (< delta): " + base);
+		var these_colors = [];
+		var these_color_strings = [];
+		for (i=0;i<these_criteria.count;i++){
+			these_colors.push({"rosso": (base[0] + delta*(initial_indices[0]+=1))%255, "verde": (base[1] + delta*(initial_indices[1]+=1))%255, "azzuro": (base[2] + delta*(initial_indices[2]+=1))%255});
+			these_color_strings.push('rgb(' + (base[0] + delta*(initial_indices[0]))%255 + ', ' + (base[1] + delta*(initial_indices[1]))%255 + ', ' + (base[2] + delta*(initial_indices[2]))%255 + ')');
+		}
+		console.log("returning these_colors from factory");
+		console.log(these_colors);
+		return {colors: these_colors, color_strings: these_color_strings};
 	}
 	return factory;
 }]);

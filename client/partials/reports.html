@@ -35,7 +35,7 @@
 			</tr>
 		</table>
 	</div>
-	<div class='main_data'>
+	<div class='unit_account main_data'>
 		<div ng-show='this_report' class='full_history'>
 			<h2>Account History for Unit <span ng-bind='reported_unit'></span></h2>
 			<table>
@@ -67,6 +67,10 @@
 					<td>Initial Balance</td>
 				</tr>
 			</table>
+		</div>
+		<div class='report_chart'>>
+			<h2>Account Balance Over Time</h2>
+			<nvd3 data='report_chart_data' options='report_chart_options'></nvd3>
 		</div>
 	</div>
 </div>

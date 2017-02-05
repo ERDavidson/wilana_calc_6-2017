@@ -6,19 +6,20 @@
 	<link rel='stylesheet' type='text/css' href='./static/style.css'>
 	<link rel='stylesheet' type='text/css' href='./static/nv.d3.css'>
 	<!---<link rel='stylesheet' type='text/css' href='./static/LineChart.css'>-->
-	<script type="text/javascript" src="./angular.js"></script>
-	<script type="text/javascript" src="./angular-route-1_5_5.js"></script>
-	<script type="text/javascript" src="./isaac.js"></script>
-	<script type="text/javascript" src="./bcrypt.js"></script>
-	<script type="text/javascript" src="./angular-animate.js"></script>
-	<script type="text/javascript" src="./d3.js"></script>
-	<script type="text/javascript" src="./nv.d3.js"></script>
-	<script type="text/javascript" src="./angular-nvd3.js"></script>
+	<script type="text/javascript" src="./client_modules/angular.js"></script>
+	<script type="text/javascript" src="./client_modules/angular-route-1_5_5.js"></script>
+	<script type="text/javascript" src="./client_modules/isaac.js"></script>
+	<script type="text/javascript" src="./client_modules/bcrypt.js"></script>
+	<script type="text/javascript" src="./client_modules/angular-animate.js"></script>
+	<script type="text/javascript" src="./client_modules/d3.js"></script>
+	<script type="text/javascript" src="./client_modules/nv.d3.js"></script>
+	<script type="text/javascript" src="./client_modules/angular-nvd3.js"></script>
 	<script type="text/javascript" src="./wc3_services.js"></script>
 	<!--<script type="text/javascript" src="./LineChart.js"></script>-->
 	<script>
 	var myApp = angular.module("myApp", ['ngRoute', 'ngAnimate', 'nvd3', 'wc3_services']);
 	var wc3_services = angular.module("wc3_services");
+	var ngAnimate = angular.module("ngAnimate");
 
 	myApp.config(function($routeProvider){
 		$routeProvider
@@ -69,7 +70,8 @@
 				controller: 'expendituresController'
 			})
 			.when('/preferences', {
-				templateUrl: './partials/preferences.html'
+				templateUrl: './partials/preferences.html',
+				controller: 'preferencesController'
 			})
 			.otherwise({
 				redirectTo: '/partials/welcome.html'
@@ -174,16 +176,19 @@
 			})
 		}
 		$scope.googlelogintest = function(){
+			console.log("in user controller googlelogintest method");
 			userFactory.googlelogintest(function(result){
 				//console.log(result);
 			})
 		}
 		$scope.load_gin = function(){
+			console.log("in user controller load_gin method");
 			var auth2 = gapi.auth2.getAuthInstance();
 			auth2.signIn();
-			//console.log("load_gin completed");
+			console.log("load_gin completed");
 		}
 		$scope.onSignIn = function(googleUser) { //not sure anything calls this yet
+			console.log("in user controller onSignIn method");
   			var profile = googleUser.getBasicProfile();
   			//console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
  			//console.log('Name: ' + profile.getName());
@@ -191,9 +196,10 @@
 			//console.log('Email: ' + profile.getEmail());
 		}
 		$scope.logout_google = function(){
+			console.log("in user controller logout_google method");
  			var auth2 = gapi.auth2.getAuthInstance();
     		auth2.signOut().then(function () {
-      			//console.log('User signed out.');
+      			console.log('User signed out.');
       		});
 		}
 		$scope.logout = function(){
@@ -346,7 +352,7 @@
 				$scope.balance_histories_data = these_histories.histories_for_chart;
 				$scope.balance_histories_options = {
 					"chart": {
-						"type": "stackedAreaChart",
+						"type": "multiChart",
 						"height": 450,
 						"margin": {
 							"top": 20,
@@ -618,8 +624,8 @@
 				}
 				$scope.mortgage_chart_data.push($scope.mortgage_chart_prep[0]);
 				$scope.mortgage_chart_data.push($scope.mortgage_chart_prep[1]);  // when finished with the last month, tacks the series onto a permanent site, and starts again
-				//console.log("mortgage chart data:");
-				//console.log($scope.mortgage_chart_data);
+				console.log("mortgage chart data:");
+				console.log($scope.mortgage_chart_data);
 			}
 		});
 		/*
@@ -702,8 +708,10 @@
 			}
 		}	
 	}]);
-	myApp.controller('preferencesController', ['$scope', 'reportFactory', 'userFactory', function($scope, reportFactory, userFactory){
-		var admin = userFactory.admin;
+	myApp.controller('preferencesController', ['$scope', 'reportFactory', 'userFactory', 'toolFactory', function($scope, reportFactory, userFactory, toolFactory){
+		$scope.admin = userFactory.admin;
+		$scope.colors = {};
+		$scope.new_colors = [];
 		$scope.unit_transaction_reference_health = function(){
 			reportFactory.reference_health(function(result){
 				if (result === "ok"){
@@ -725,20 +733,55 @@
 				}
 			})
 		}
+		$scope.make_rainbow = function(these_criteria){
+			console.log("make_rainbow called with arguments: " + JSON.stringify(these_criteria));
+			console.log(these_criteria);
+			toolFactory.make_rainbow(these_criteria, function(result){
+				if (result.error){
+					userFactory.log("error", "Rainbow failed: " + result.error);
+				} else {
+					console.log("result received from factory: " + JSON.stringify(result));
+					$scope.new_colors = result.colors;
+					console.log("new_colors is now " + JSON.stringify($scope.new_colors));
+				}
+			})
+		}
+		$scope.random_rainbow = function(count){
+			var all_these_colors = [];
+			for (x=0;x<count;x++){
+				var this_color = [];
+				for (i=0;i<3;i++){
+					this_color.push(Math.floor(Math.random()*255));
+					console.log("pushed and made " + this_color);
+				}
+				all_these_colors.push({background_color: 'rgb(' + this_color[0] + ', ' + this_color[1] + ', ' + this_color[2] + ')'});
+			}
+			$scope.all_these_colors = all_these_colors;
+		}
+		$scope.my_background = function(these_rgb){
+			console.log("in my_background with arguments: " + JSON.stringify(these_rgb));
+			var formatted = 'rgb(' + these_rgb.rosso + ', ' + these_rgb.verde + ', ' + these_rgb.azzuro + ')';
+			console.log("converted to " + formatted);
+			return {background_color: formatted};
+		}
 	}]);
 	myApp.controller('reportsController', ['$scope', 'reportFactory', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, reportFactory, transactionFactory, unitFactory, userFactory){
 		$scope.date_for_sorting = transactionFactory.date_for_sorting;
 		$scope.active_unit_button = "";
 		$scope.admin = userFactory.admin;
 		$scope.current_user = userFactory.current_user;
+		$scope.chart_data = {};
 		$scope.generate_report = function(this_unit_number){
 			if (!this_unit_number){
 				userFactory.log('error', "Please select a unit number.");
 			} else {
 				$scope.reported_unit = this_unit_number;
 				reportFactory.full_history(this_unit_number, function(result){
-					$scope.this_report = result.full_history;
+					$scope.this_report = result.full_history;					
 					$scope.initial_balance = result.initial_balance;
+					$scope.report_chart_options = result.chart_options;
+					$scope.report_chart_data = [result.chart_data];
+					console.log($scope.report_chart_data);
 					userFactory.log('message', 'Report on unit ' + this_unit_number + " generated.");
 				})
 			}
@@ -785,6 +828,36 @@
 			$scope.active_unit_button = unit_number;
 			$scope.generate_report(unit_number);
 		}
+		$scope.report_chart_options = {
+			"chart": {
+				"type": "lineChart",
+				"height": 720,
+				"width": 1025, 
+				"top": 20,
+				"right": 40,
+				"bottom": 30,
+				"left": 120
+			},
+			"x": function(d){ return d[0];},
+			"y": function(d){ return d[1];},
+			"duration": 100,
+			"useInteractiveGuideline": true,
+			"xAxis": {
+				"showMaxMin": true,
+				tickFormat: function(d){
+					return d3.time.format('%x')(new Date(d));
+				}
+			},
+			"yAxis": {
+				tickFormat: function(d){
+					return ("$" + d3.format(',.2f')(d/100));
+				}
+			},
+			"zoom": {
+				"enabled": false
+			}
+		};
+		console.log($scope.report_chart_options);
 	}]);
 	myApp.controller('taxesController', ['$scope', 'propertyTaxFactory', 'mortgageFactory', 'userFactory', function($scope, propertyTaxFactory, mortgageFactory, userFactory){
 		$scope.current_user = userFactory.current_user;
@@ -1120,7 +1193,7 @@
 			//$scope.this_new_history = this_new_history;
 			//$scope.daily_result = these_balances;
 	</script>
-	<script type="text/javascript" src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+	<script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
 	<meta name="google-signin-client_id" content="544028406258-p756lflvl7dqrap03ajh3kogfmc873pf.apps.googleusercontent.com">
 </head>
 <body ng-app='myApp'>

@@ -1,7 +1,22 @@
 <div ng-include="'./partials/includes/nav_pane.html'"></div>
 <div>
-	<h3>zFuture Preferences</h3>>
+	<h3>Future Preferences, {{admin}}</h3>
 <div ng-if='admin'>
-<h3>Misc Admin Tools</h3>
-<p><input type='submit' ng-click='unit_transaction_reference_health()' value='Check model reference health'></p>
+	<h3>Misc Admin Tools</h3>
+	<p><input type='submit' ng-click='unit_transaction_reference_health()' value='Check model reference health'></p>
+	<h3>Distinct color generation toy</h3>
+	<p>Number of colors desired: <input type='text' ng-model='colors.count'></p>
+	<p>Number of color groupings desired: <input type='text' ng-model='colors.groups'></p>
+	<input type='submit' ng-click='make_rainbow(colors)' value='Generate Colors'>
+	<input type='submit' ng-click='random_rainbow(colors.count)' value='or just 100% pseudo-random ones'>
+</div>
+<div class='color_tile' ng-style='my_background(this_color)' ng-repeat='this_color in new_colors track by $index'>
+	<p>rgb(
+		<span ng-bind='this_color.rosso'></span>, 
+		<span ng-bind='this_color.verde'></span>, 
+		<span ng-bind='this_color.azzuro'></span>)
+	</p>
+</div>
+<div class='color_tile' ng-style='all_this_color' ng-repeat='all_this_color in all_these_colors track by $index'>
+	<p ng-bind='all_this_color.background_color'></p>
 </div>
