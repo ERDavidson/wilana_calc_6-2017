@@ -25,7 +25,7 @@ module.exports = {
 					initial_balance: req.body.initial_balance,
 					pet_deposit: req.body.pet_deposit,
 					sublease_deposit: req.body.sublease_deposit,
-					transactions: []
+					transactions: [],
 				});
 				this_unit.save(function(err){
 					if (err){

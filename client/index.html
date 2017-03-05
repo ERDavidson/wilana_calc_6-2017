@@ -15,11 +15,19 @@
 	<script type="text/javascript" src="./client_modules/nv.d3.js"></script>
 	<script type="text/javascript" src="./client_modules/angular-nvd3.js"></script>
 	<script type="text/javascript" src="./wc3_services.js"></script>
+	<script src="https://apis.google.com/js/platform.js" async defer></script>
+	<!--<script type="text/javascript" src="./client_modules/ng-google-signin.js"></script>-->
 	<!--<script type="text/javascript" src="./LineChart.js"></script>-->
 	<script>
-	var myApp = angular.module("myApp", ['ngRoute', 'ngAnimate', 'nvd3', 'wc3_services']);
+	var myApp = angular.module("myApp", ['ngRoute', 'ngAnimate', 'nvd3', 'wc3_services']); // 'google-signin',
 	var wc3_services = angular.module("wc3_services");
 	var ngAnimate = angular.module("ngAnimate");
+
+	/*myApp.config(['GoogleSigninProvider', function(GoogleSigninProvider){
+		GoogleSigninProvider.init({
+			client_id: "544028406258-p756lflvl7dqrap03ajh3kogfmc873pf.apps.googleusercontent.com"
+		});
+	}]);*/
 
 	myApp.config(function($routeProvider){
 		$routeProvider
@@ -62,12 +70,13 @@
 				templateUrl: './partials/documents.html',
 				controller: 'documentsController'
 			})
-			.when('/budget', {
-				templateUrl: './partials/budget.html'
+			.when('/spending/overview', {
+				templateUrl: './partials/spending_overview.html',
+				controller: 'expensesController'
 			})
-			.when('/spending_history', {
-				templateUrl: './partials/spending_history.html',
-				controller: 'expendituresController'
+			.when('/spending/tables', {
+				templateUrl: './partials/spending_tables.html',
+				controller: 'expensesController'
 			})
 			.when('/preferences', {
 				templateUrl: './partials/preferences.html',
@@ -83,7 +92,6 @@
 		$scope.current_user = userFactory.current_user;
 		$scope.logged_in = userFactory.logged_in;
 		$scope.admin = userFactory.admin;
-
 		if (!$scope.logged_in){
 			$location.url("/login");
 		}
@@ -96,11 +104,13 @@
 		$scope.user_info = {};
 		$scope.welcome_message = "";
 		$scope.edit_user = false;
-		$scope.updated_user = {};
+		//console.log("about to zero out updated_user");
+		$scope.updated_user = {email: userFactory.email};
 		$scope.report = "";
 		$scope.today = new Date();
 		$scope.date_for_sorting = transactionFactory.date_for_sorting;
 		$scope.message_log = userFactory.message_log;
+		$scope.show_this = false;
 		$scope.page_titles = {
 			'/': "User Login", 
 			'/matrix': "Dues Matrix", 
@@ -113,15 +123,15 @@
 			'/login': "User Login",
 			'/feedback': "Submit Feedback",
 			'/documents': "Governing Documents & Useful Links",
-			'/budget': "Current Budget",
-			'/spending_history': "Coop Spending History",
+			'/budget/overview': "Budget & Spending Overview",
+			'/budget/tables': "Budget & Spending Category Tables",
 			'/preferences': "User Preferences & Email Reminder Signup",
 		};
 		$scope.this_page_title = $scope.page_titles[$location.url()];
 		$scope.location = $location.url();
 		userFactory.index(function(user_index){  //run the full version of this here (i.e. as-is).  preloaded version is better for things that don't run at startup.
 			if (user_index.error){
-				userFactory.log('error', "Error retrieving user list: " + user_index.error);
+				console.log("Error retrieving user list: " + user_index.error);
 			} else {			
 				$scope.user_list = user_index.users;
 			}
@@ -147,12 +157,19 @@
 		$scope.refresh_log = function(){
 			$scope.$evalAsync(userFactory.log());
 		}
+		$scope.toggle_form = function(this_form){
+			if ($scope.show_this === this_form){
+				$scope.show_this = false;
+			} else {
+				$scope.show_this = this_form;
+			}
+		}
 		$scope.register = function(user_info){
 			userFactory.register(user_info, function(result){
 				if (result.error){
-					userFactory.log('error', "Error registering new user: " + result.error);
+					console.log("Error registering new user: " + result.error);
 				} else {
-					userFactory.log('message', "Registration completed.");
+					//console.log( "Registration completed.");
 					$location.url('/reports');
 
 				}
@@ -161,20 +178,36 @@
 		$scope.login = function(login_info){
 			userFactory.login(login_info, function(result){
 				if (result.error){
-					userFactory.log('error', ("Error during login: " + result.error));
+					console.log(("Error during login: " + result.error));
 				} else {
 					$scope.logged_in = userFactory.logged_in;
 					$scope.current_user = userFactory.current_user;
+					$scope.email = userFactory.email;
+					$scope.updated_user.email = userFactory.email;
+					//console.log("updated_user is now " + JSON.stringify($scope.updated_user));
 					$scope.admin = userFactory.admin;
 					if ($scope.admin){
 						//console.log("checking mail");
 						feedbackFactory.check_mail();
 					}
-					userFactory.log('message', "Login completed.");
+					//console.log( "Login by email " + $scope.email + ", unit " + $scope.current_user + " completed.");
 					$location.url('/reports');
 				}
 			})
 		}
+		$scope.login_psspt = function(){
+			userFactory.login_psspt($scope.login_info, function(result){
+				console.log('not yet implemented');
+			})
+		}
+		$scope.login_GSi = function(){
+			this_auth = gapi.auth2.init({
+				client_id: "544028406258-p756lflvl7dqrap03ajh3kogfmc873pf.apps.googleusercontent.com",///  =  something?
+				scope: 'email',
+				fetch_basic_profile: false
+			}); //.then()??
+			//console.log(this_auth);
+		};
 		$scope.googlelogintest = function(){
 			console.log("in user controller googlelogintest method");
 			userFactory.googlelogintest(function(result){
@@ -185,7 +218,7 @@
 			console.log("in user controller load_gin method");
 			var auth2 = gapi.auth2.getAuthInstance();
 			auth2.signIn();
-			console.log("load_gin completed");
+			//console.log("load_gin completed");
 		}
 		$scope.onSignIn = function(googleUser) { //not sure anything calls this yet
 			console.log("in user controller onSignIn method");
@@ -199,18 +232,18 @@
 			console.log("in user controller logout_google method");
  			var auth2 = gapi.auth2.getAuthInstance();
     		auth2.signOut().then(function () {
-      			console.log('User signed out.');
+      			//console.log('User signed out.');
       		});
 		}
 		$scope.logout = function(){
 			userFactory.logout({unit: userFactory.current_user}, function(result){
 				if (result.error){
-					userFactory.log('error', "Error during logout: " + result.error);
+					console.log("Error during logout: " + result.error);
 				} else if (result.logged_out){
 					$scope.logged_in = false;
 					$scope.current_user = "";
 					$scope.admin = false;
-					userFactory.log('message', "Logout completed.  These should all be false: " + $scope.logged_in + $scope.admin + userFactory.admin);
+					//console.log( "Logout completed.  These should all be false: " + $scope.logged_in + $scope.admin + userFactory.admin);
 					$scope.welcome_message = "You have been logged out";
 					$location.url("/");
 				}
@@ -218,18 +251,18 @@
 		}
 		$scope.logoff_many = function(){
 			userFactory.logout_many($scope.user_list, function(result){
-				userFactory.log('message', 'Mass logout result: ' + JSON.stringify(result));;
+				//console.log( 'Mass logout result: ' + JSON.stringify(result));;
 			})
 		}
 		$scope.update_user = function(){
 			//console.log("in user controller, about to update password: " + JSON.stringify($scope.updated_user));;
 			userFactory.update_user($scope.updated_user, function(result){
 				if (result.error){
-					userFactory.log('error', "Error updating user: " + result.error);
+					console.log("Error updating user: " + result.error);
 				} else {
 					$scope.updated_user = {};
 					$scope.edit_user = false;
-					userFactory.log('message', 'User update completed.  Server response: ' + result.result);
+					//console.log( 'User update completed.  Server response: ' + result.result);
 				}
 			})
 		}
@@ -243,10 +276,11 @@
 			$scope.library_info[library_section_key].show = !($scope.library_info[library_section_key].show);
 		}
 	}]);
-	myApp.controller('expendituresController', ['$scope', 'expenditureFactory', 'balanceHistoryFactory', 'mortgageFactory', 'userFactory', function($scope, expenditureFactory, balanceHistoryFactory, mortgageFactory, userFactory){
+	myApp.controller('expensesController', ['$scope', 'expenseFactory', 'balanceHistoryFactory', 'mortgageFactory', 'userFactory', function($scope, expenseFactory, balanceHistoryFactory, mortgageFactory, userFactory){
 		var today = new Date();
-		var heard_from = {"mortgageFactory": false, "expenditureFactory": false};
+		var heard_from = {"mortgageFactory": false, "expenseFactory": false};
 		var partial_expense_data = [];
+		var expense_detail_data = {maintenance: [], utilities: [], other_expenses: []};
 		$scope.admin = userFactory.admin;
 		$scope.new_line = {};
 		$scope.these_years = {}; 
@@ -264,10 +298,13 @@
 		for (year=2007;year<=today.getFullYear();year++){
 			$scope.these_years[year] = {};
 		}
-		expenditureFactory.index(function(new_index){
+		expenseFactory.index(function(new_index){
 			if (new_index.error){
-				userFactory.log("error", "Error retrieving spending history index.");
+				console.log("Error retrieving spending history index.");
 			} else {
+				expense_detail_data.maintenance = new_index.expense_chart_detail.maintenance_subcategories;
+				expense_detail_data.utilities = new_index.expense_chart_detail.utilities_subcategories;
+				expense_detail_data.other_expenses = new_index.expense_chart_detail.other_expenses_subcategories;
 				partial_expense_data = partial_expense_data.concat(new_index.expense_chart_data);
 				if (heard_from["mortgageFactory"] === true){				//this is a convoluted attempt to get the chart to render correctly, since I'm having difficulty getting sequentially added data compiled correctly.   if mortgagefactory has reported, we need to collect its data before overwriting scope objects
 					//$scope.supercategory_index.Mortgage.Total["2017"] = new_index.by_supercategory.Mortgage.Total["2017"];
@@ -278,19 +315,20 @@
 					$scope.expense_chart_data = partial_expense_data;
 				}
 				$scope.supercategory_index = new_index.by_supercategory;
-				heard_from["expenditureFactory"] = true;
+				heard_from["expenseFactory"] = true;
 				$scope.income_chart_data = $scope.income_chart_data.concat(new_index.income_chart_data);
-				console.log("Lots of indexes:  Supercat, expense_chart, income_chart: ");
-				console.log(new_index);
+				//console.log("Lots of indexes:  Supercat, expense_chart, income_chart: ");
+				//console.log(new_index);
 				$scope.chart_options = {
 					'chart': {
 						"type": 'stackedAreaChart',
 						"height": 450, 
+						"width": 925,
 						"margin": {
 							top: 20,
-							right: 60,
+							right: 20,
 							bottom: 30,
-							left: 120
+							left: 90
 						},
 						"x": function(d){return d[0];},
 						"y": function(d){return d[1];},
@@ -328,7 +366,7 @@
 				//console.log("final chart_options: " + JSON.stringify($scope.expense_chart_options));
 			}
 		})
-		expenditureFactory.get_recorded_incomes(function(result){
+		expenseFactory.get_recorded_incomes(function(result){
 			$scope.recorded_incomes = result.incomes;
 		})
 		mortgageFactory.index_by_year(function(result){
@@ -336,18 +374,18 @@
 			//$scope.expense_chart_data.push(result.for_chart[1]); //   this leaves off total for now
 			partial_expense_data = partial_expense_data.concat(result.for_chart.slice(0,2)); 
 			heard_from["mortgageFactory"] = true;
-			if (heard_from["expenditureFactory"] === true){
-				console.log("Heard from expense factory first");
+			if (heard_from["expenseFactory"] === true){
+				//console.log("Heard from expense factory first");
 				$scope.expense_chart_data = partial_expense_data;
 			}
 			$scope.supercategory_index.Mortgage = result.for_table.Mortgage;  //then you can overwrite the carrier of the budgeted value.
-			console.log("Done adding mortgage to expense data:");
-			console.log(partial_expense_data);
+			//console.log("Done adding mortgage to expense data:");
+			//console.log(partial_expense_data);
 
 		})
 		balanceHistoryFactory.index(function(these_histories){
 			if (these_histories.error){
-				userFactory.log("error", "Error retrieving balance history index");
+				console.log("Error retrieving balance history index");
 			} else {
 				$scope.balance_histories_data = these_histories.histories_for_chart;
 				$scope.balance_histories_options = {
@@ -356,19 +394,30 @@
 						"height": 450,
 						"margin": {
 							"top": 20,
-							"right": 20,
+							"right": 60,
 							"bottom": 30,
-							"left": 40
+							"left": 120
 						},
-						"useVoronoi": false,
-						"clipEdge": true,
+						//"useVoronoi": false,
+						//"clipEdge": true,
+						//"staggerLabels": true,
 						"duration": 100,
-						"useInteractiveGuideline": true,
+						//"useInteractiveGuideline": true,
 						"xAxis": {
-							"showMaxMin": false
+							"showMaxMin": false,
+							tickFormat: function(d){
+								return d3.time.format('%x')(new Date(d))
+							}
 						},
-						"yAxis": {},
-						"zoom": {
+						"yAxis1": {
+							tickFormat: function(d){
+								return ("$" + d3.format(',.2f')(d))
+							}
+						},
+						"yAxis2": {
+						}
+					}
+						/*"zoom": {
 							"enabled": true,
 							"scaleExtent": [
 								1,
@@ -379,8 +428,7 @@
 							"horizontalOff": false,
 							"verticalOff": true,
 							"unzoomEventType": "dblclick.zoom"
-						}
-					}
+						}*/
 				/*{
 					'chart': {
 						"type": 'stackedAreaChart',
@@ -419,15 +467,22 @@
 						}
 					}*/
 				};
-				console.log("balance histories options:");
-				console.log($scope.balance_histories_options);
-				console.log("balance histories data:");
-				console.log($scope.balance_histories_data);
+				//console.log("balance histories options:");
+				//console.log($scope.balance_histories_options);
+				//console.log("balance histories data:");
+				//console.log($scope.balance_histories_data);
 			}
 		})
 		$scope.toggle = function(element){
 			$scope.show_these[element] = !$scope.show_these[element];
 			//console.log($scope.show_these);
+		}
+		$scope.expense_view = function(this_view){
+			if (this_view === "overview"){
+				$scope.expense_chart_data = partial_expense_data;
+			} else {
+				$scope.expense_chart_data = expense_detail_data[this_view];
+			}
 		}
 		$scope.check_all = function(){		//checks all years that are fully complete as true
 			if (!$scope.checked_all){
@@ -446,13 +501,13 @@
 			this_new_line.values = {};
 			var valid_entry = true;
 			if (!this_new_line.category){
-				userFactory.log("error", "Budget category must have a name.");
+				console.log("Budget category must have a name.");
 				valid_entry = false;
 			} else {
 				for (i=2007;i<=today.getFullYear();i++){
 					if ($scope.these_years[i].included){
 						if (!Number($scope.these_years[i].amount) && (Number($scope.these_years[i].amount) != 0)){
-							userFactory.log('error', 'Year ' + i + ' must be given a numerical value.');
+							console.log('Year ' + i + ' must be given a numerical value.');
 							valid_entry = false;
 						} else {
 							this_new_line.values[i] = Number($scope.these_years[i].amount);
@@ -461,9 +516,9 @@
 				}
 			}
 			if (valid_entry){
-				expenditureFactory.create_budget_line(this_new_line, function(result){
+				expenseFactory.create_budget_line(this_new_line, function(result){
 					if (result.error){
-						userFactory.log("error", "Error creating new budget line: " + err);
+						console.log("Error creating new budget line: " + err);
 					} else {
 						$scope.supercategory_index = result.by_supercategory;
 					}
@@ -476,9 +531,9 @@
 			if ((this_new_history.dates.length === this_new_history.values.length) && (this_new_history.dates.length > 0)){
 				balanceHistoryFactory.create(this_new_history, function(result){
 					if (result.error){
-						userFactory.log("error", "Error creating balance history: " + result.error);
+						console.log("Error creating balance history: " + result.error);
 					} else {
-						userFactory.log("message", "Balance history created with no errors detected.");
+						console.log("Balance history created with no errors detected.");
 						$scope.new_balance_history = {};
 					}
 				})
@@ -487,13 +542,14 @@
 	}]);
 	myApp.controller('feedbacksController', ['$scope', 'feedbackFactory', 'userFactory', 'unitFactory', function($scope, feedbackFactory, userFactory, unitFactory){
 		$scope.current_user = userFactory.current_user;
+		$scope.reminder_email = $scope.current_user;
 		$scope.admin = userFactory.admin;
 		$scope.today = new Date();
 		$scope.submitted_feedback = false;
 		if ($scope.admin){
 			feedbackFactory.index(function(result){
 				if (result.error){
-					userFactory.log("error", "Error retrieving feedback index: " + result.err);
+					console.log("Error retrieving feedback index: " + result.err);
 				} else {
 					$scope.feedback_index = result.feedback_index;
 				}
@@ -504,7 +560,7 @@
 			new_message.unit = $scope.current_user;
 			feedbackFactory.create_feedback(new_message, function(result){
 				if (result.error){
-					userFactory.log("error", "Error submitting feedback: " + result.error);
+					console.log("Error submitting feedback: " + result.error);
 				} else {
 					$scope.feedback_submitted = true;
 					$scope.created_feedback = result.submitted_feedback;
@@ -514,12 +570,12 @@
 		$scope.delete = function(old_id){
 			feedbackFactory.delete_feedback(old_id, function(result){
 				if (result.error){
-					userFactory.log("error", "Error deleting feedback: " + result.error);
+					console.log("Error deleting feedback: " + result.error);
 				} else {
-					userFactory.log("message", "Feedback deleted: " + JSON.stringify(result));
+					//console.log("Feedback deleted: " + JSON.stringify(result));
 					feedbackFactory.index(function(result){
 						if (result.error){
-							userFactory.log("error", "Error retrieving feedback index: " + result.err);
+							console.log("Error retrieving feedback index: " + result.err);
 						} else {
 							$scope.feedback_index = result.feedback_index;
 						}
@@ -534,10 +590,10 @@
 		$scope.dues_matrix = {};
 		matrixFactory.index(function(data){
 			if (data.error){
-				userFactory.log('error', "Error retrieving dues rates: " + data.error);
+				console.log("Error retrieving dues rates: " + data.error);
 			} else {
 				$scope.dues_matrix = data;
-				userFactory.log('message', 'Dues rate matrix loaded.');
+				//console.log( 'Dues rate matrix loaded.');
 			}
 		})
 	}]);
@@ -548,9 +604,9 @@
 		$scope.main_data = "";
 		mortgageFactory.mortgage_index(function(result){
 			if (result.error){
-				userFactory.log("error", result.error);
+				console.log(result.error);
 			} else {
-				//userFactory.log("message", "Retrieved mortgage index of length " + result.these_complete_mortgages.length);
+				//console.log("Retrieved mortgage index of length " + result.these_complete_mortgages.length);
 				$scope.mortgage_index = result.these_complete_mortgages;	
 				//console.log("mortage_index:");
 				//console.log($scope.mortgage_index);	
@@ -624,8 +680,8 @@
 				}
 				$scope.mortgage_chart_data.push($scope.mortgage_chart_prep[0]);
 				$scope.mortgage_chart_data.push($scope.mortgage_chart_prep[1]);  // when finished with the last month, tacks the series onto a permanent site, and starts again
-				console.log("mortgage chart data:");
-				console.log($scope.mortgage_chart_data);
+				//console.log("mortgage chart data:");
+				//console.log($scope.mortgage_chart_data);
 			}
 		});
 		/*
@@ -664,9 +720,9 @@
 			for (i=0;i<raw_payment_list.length;i++){
 				var these_payment_properties = raw_payment_list[i].split('\t');
 				if (these_payment_properties.length != 4){
-					userFactory.log('error', "Error in mortgage payment format: too few properties at " + these_payment_properties);
+					console.log("Error in mortgage payment format: too few properties at " + these_payment_properties);
 				} else if (Number(these_payment_properties[1]) != (Number(these_payment_properties[2]) + Number(these_payment_properties[3])).toFixed(2)){
-					userFactory.log('error', "Error in mortgage payment property amounts at: " + these_payment_properties + ".  I don't think " + Number(these_payment_properties[1]) + " equals " + (Number(these_payment_properties[2]) + Number(these_payment_properties[3])).toFixed(2));
+					console.log("Error in mortgage payment property amounts at: " + these_payment_properties + ".  I don't think " + Number(these_payment_properties[1]) + " equals " + (Number(these_payment_properties[2]) + Number(these_payment_properties[3])).toFixed(2));
 				} else {
 					$scope.parsed_mortgage.payments.push({
 						'pay_date': new Date(these_payment_properties[0]), 
@@ -688,14 +744,14 @@
 			}
 			mortgageFactory.create_mortgage($scope.parsed_mortgage, function(result){
 				if (result.error){
-					userFactory.log("error", result.error);
+					console.log(result.error);
 				} else {
 					if (result.created_mortgage){
 						$scope.mortgage_index.push(result.created_mortgage);
 					}
 					$scope.new_mortgage = {};
 					$scope.parsed_mortgage = {};
-					userFactory.log("message", "Mortgage created?  Result: " + JSON.stringify(result));
+					//console.log("Mortgage created?  Result: " + JSON.stringify(result));
 				}
 			})
 		}
@@ -710,22 +766,41 @@
 	}]);
 	myApp.controller('preferencesController', ['$scope', 'reportFactory', 'userFactory', 'toolFactory', function($scope, reportFactory, userFactory, toolFactory){
 		$scope.admin = userFactory.admin;
+		//console.log("Dues reminder: ");
+		//console.log(userFactory.dues_reminder);
+		$scope.reminder_email = "";
+		$scope.user_info = userFactory.current_user_info;		// hoping this will update automatically with factory value.  if so, would be great to expand to entire app.  update:  seems to NOT update automatically, but is still potentially handy as a broad-range updater
+		$scope.these_units = userFactory.user_index.users;
+		if ($scope.user_info.dues_reminder  && ($scope.user_info.dues_reminder != "")){
+			$scope.reminder_selected = true;
+		}
 		$scope.colors = {};
 		$scope.new_colors = [];
+		$scope.update_reminder = function(these_parameters){ //parameters are currently {action: <"subscribe" or "unsubscribe">}
+			if (these_parameters.action === "unsubscribe"){
+				$scope.reminder_email = "";
+			}
+			userFactory.update_user({dues_reminder: $scope.reminder_email}, function(result){
+				//console.log(result);
+				//console.log(userFactory.current_user_info);
+				$scope.user_info = userFactory.current_user_info;
+				//console.log($scope.user_info);
+			})
+		}
 		$scope.unit_transaction_reference_health = function(){
 			reportFactory.reference_health(function(result){
 				if (result === "ok"){
-					userFactory.log('message', "Unit & Transaction references look perfect.");
+					console.log( "Unit & Transaction references look perfect.");
 				} else {
 					//console.log(JSON.stringify(result));
 					if (result.runaway_transactions.length > 0){
-						userFactory.log('error', "" + result.runaway_transactions.length + ' transactions believe themselves owned by a different unit.  See list in console.');
+						console.log("" + result.runaway_transactions.length + ' transactions believe themselves owned by a different unit.  See list in console.');
 						for (i=0;i<result.runaway_transactions.length;i++){
 							//console.log('Transaction: ' + JSON.stringify(result.runaway_transactions[i].transaction) + " and claimant, unit " + result.runaway_transactions[i].unit_number);
 						}
 					}
 					if (result.rejecting_units.length > 0){
-						userFactory.log('error', "" + result.rejecting_units.length + ' units reject clinging transactions.  See list in console.');
+						console.log("" + result.rejecting_units.length + ' units reject clinging transactions.  See list in console.');
 						for (i=0;i<result.runaway_transactions.length;i++){
 							//console.log('Unit: ' + JSON.stringify(result.rejecting_units[i].unit) + " and clingant, transaction " + JSON.stringify(result.rejecting_units[i].transaction));			
 						}
@@ -734,15 +809,15 @@
 			})
 		}
 		$scope.make_rainbow = function(these_criteria){
-			console.log("make_rainbow called with arguments: " + JSON.stringify(these_criteria));
-			console.log(these_criteria);
+			//console.log("make_rainbow called with arguments: " + JSON.stringify(these_criteria));
+			//console.log(these_criteria);
 			toolFactory.make_rainbow(these_criteria, function(result){
 				if (result.error){
-					userFactory.log("error", "Rainbow failed: " + result.error);
+					console.log("Rainbow failed: " + result.error);
 				} else {
-					console.log("result received from factory: " + JSON.stringify(result));
+					//console.log("result received from factory: " + JSON.stringify(result));
 					$scope.new_colors = result.colors;
-					console.log("new_colors is now " + JSON.stringify($scope.new_colors));
+					//console.log("new_colors is now " + JSON.stringify($scope.new_colors));
 				}
 			})
 		}
@@ -752,16 +827,16 @@
 				var this_color = [];
 				for (i=0;i<3;i++){
 					this_color.push(Math.floor(Math.random()*255));
-					console.log("pushed and made " + this_color);
+					//console.log("pushed and made " + this_color);
 				}
 				all_these_colors.push({background_color: 'rgb(' + this_color[0] + ', ' + this_color[1] + ', ' + this_color[2] + ')'});
 			}
 			$scope.all_these_colors = all_these_colors;
 		}
 		$scope.my_background = function(these_rgb){
-			console.log("in my_background with arguments: " + JSON.stringify(these_rgb));
+			//console.log("in my_background with arguments: " + JSON.stringify(these_rgb));
 			var formatted = 'rgb(' + these_rgb.rosso + ', ' + these_rgb.verde + ', ' + these_rgb.azzuro + ')';
-			console.log("converted to " + formatted);
+			//console.log("converted to " + formatted);
 			return {background_color: formatted};
 		}
 	}]);
@@ -773,7 +848,7 @@
 		$scope.chart_data = {};
 		$scope.generate_report = function(this_unit_number){
 			if (!this_unit_number){
-				userFactory.log('error', "Please select a unit number.");
+				console.log("Please select a unit number.");
 			} else {
 				$scope.reported_unit = this_unit_number;
 				reportFactory.full_history(this_unit_number, function(result){
@@ -781,8 +856,8 @@
 					$scope.initial_balance = result.initial_balance;
 					$scope.report_chart_options = result.chart_options;
 					$scope.report_chart_data = [result.chart_data];
-					console.log($scope.report_chart_data);
-					userFactory.log('message', 'Report on unit ' + this_unit_number + " generated.");
+					//console.log($scope.report_chart_data);
+					//console.log( 'Report on unit ' + this_unit_number + " generated.");
 				})
 			}
 		}
@@ -791,24 +866,24 @@
 		}
 		unitFactory.numbers_index(function(unit_numbers_index){
 			if (unit_numbers_index.error){
-				userFactory.log('error', "Error retrieving unit numbers: " + unit_numbers_index.error);
+				console.log("Error retrieving unit numbers: " + unit_numbers_index.error);
 			} else {
 				$scope.unit_numbers = unit_numbers_index.unit_numbers;
 			}
 		})
 		unitFactory.index({"deposits": true}, function(result){
 			if (result.error){
-				userFactory.log('error', "Error retrieving deposits: " + result.error);
+				console.log("Error retrieving deposits: " + result.error);
 			} else {
 				$scope.deposit_index = result.deposit_index;
 			}
 		})
 		reportFactory.balance_summary(function(result){
 			if (result.error){
-				userFactory.log('error', "Error retrieving balances summary: " + result.error);
+				console.log("Error retrieving balances summary: " + result.error);
 			} else {
 				$scope.these_balances = result;
-				userFactory.log('message', 'Unit balance summary retrieved.');
+				//console.log( 'Unit balance summary retrieved.');
 				if (!$scope.admin && $scope.current_user){
 					$scope.shareholder_balance_list = {};
 					$scope.balance_total = 0;
@@ -857,7 +932,7 @@
 				"enabled": false
 			}
 		};
-		console.log($scope.report_chart_options);
+		//console.log($scope.report_chart_options);
 	}]);
 	myApp.controller('taxesController', ['$scope', 'propertyTaxFactory', 'mortgageFactory', 'userFactory', function($scope, propertyTaxFactory, mortgageFactory, userFactory){
 		$scope.current_user = userFactory.current_user;
@@ -867,7 +942,7 @@
 		$scope.official_calcs = {small: [992.19,736.37,848.34,1021.00,1204.92,1274.59, 1379.46], medium: [992.19, 985.98, 1135.92, 1354.74, 1613.37, 1690.65, 1847.08], large: [992.19, 1123.27, 1294.08, 1538.30, 1838.01, 1919.49, 2104.27]};  // these are from a summary xls but they conflict with single year sheets
 		propertyTaxFactory.index(function(prop_tax){
 			if (prop_tax.error){
-				userFactory.log('error', "Error retrieving property taxes: " + prop_tax.error);
+				console.log("Error retrieving property taxes: " + prop_tax.error);
 			} else {
 				$scope.property_taxes_by_attribute = prop_tax.index_by_attribute;
 			}
@@ -878,7 +953,7 @@
 			}
 			propertyTaxFactory.create_tax(this_tax_info, function(creation_result){
 				if (creation_result.error){
-					userFactory.log('error', "Error creating tax year: " + creation_result.error);
+					console.log("Error creating tax year: " + creation_result.error);
 				} else {
 					$scope.property_taxes_by_attribute = creation_result.index_by_attribute;
 				}
@@ -887,7 +962,7 @@
 		$scope.delete_tax = function(this_tax_id){
 			propertyTaxFactory.delete_tax(this_tax_id, function(deletion_result){
 				if (deletion_result.error){
-					userFactory.log('error', "Error deleting tax year: " + deletion_result.error);
+					console.log("Error deleting tax year: " + deletion_result.error);
 				} else {
 					$scope.property_taxes_by_attribute = deletion_result.index_by_attribute;
 				}
@@ -1013,7 +1088,7 @@
 		$scope.cancel = function(){
 			$scope.edit_lock = {type: false, id: null};
 			$scope.updated_transaction = {};
-			userFactory.log('message', 'Action canceled.');
+			console.log( 'Action canceled.');
 		}
 		$scope.edit_transaction = function(this_transaction){
 			$scope.updated_transaction = {
@@ -1026,14 +1101,14 @@
 				notes: this_transaction.notes
 			};
 			$scope.edit_lock = {type: "edit", id: this_transaction._id};
-			userFactory.log('message', 'Transaction prepped for editing.');
+			console.log( 'Transaction prepped for editing.');
 		}
 		$scope.update_transaction = function(updated_transaction, transaction_id){
 			transactionFactory.update(updated_transaction, function(result){
 				if (result.error){
-					userFactory.log('error', "Update error: " + result.error);
+					console.log("Update error: " + result.error);
 				} else {
-					userFactory.log("message", "Update completed.  About to refresh transactions.");
+					console.log("Update completed.  About to refresh transactions.");
 					transactionFactory.index(function(factory_response){
 						$scope.transactions_and_dues_index = factory_response.transactions_and_dues_index; // depending on context, this will be an object with any of these:  message: string, filtered_transactions: array, sums: {sum: Number, running_balances: list}
 					});
@@ -1048,13 +1123,13 @@
 		$scope.delete_transaction = function(this_transaction, this_unit){
 			transactionFactory.delete_one(this_transaction._id, function(result){
 				if (result.error){
-					userFactory.log('error', "Error deleting transaction: " + result.error);
+					console.log("Error deleting transaction: " + result.error);
 				} else {
 					transactionFactory.index(function(factory_response){
 						$scope.transactions_and_dues_index = factory_response.transactions_and_dues_index;
 					});
 					$scope.edit_lock = {type: false, id: null};
-					userFactory.log('message', "Transaction deleted.  Server response: " + JSON.stringify(result.result));
+					//console.log( "Transaction deleted.  Server response: " + JSON.stringify(result.result));
 				}
 			})
 		}
@@ -1063,6 +1138,7 @@
 		$scope.display_prep = {};
 		$scope.allowed_types = transactionFactory.allowed_types;
 		$scope.delete_confirmation_pending = false;
+		$scope.retain_form_entries = false;
 		$scope.clear_check_number = function(){
 			if ($scope.new_transaction.type != "credit"){
 				$scope.new_transaction.check_number = "";
@@ -1070,7 +1146,7 @@
 		}
 		unitFactory.numbers_index(function(data){
 			if (data.error){
-				userFactory.log('error', "Error retrieving unit numbers: " + data.error);
+				console.log("Error retrieving unit numbers: " + data.error);
 			} else {
 				$scope.unit_list = data.unit_numbers;
 			}
@@ -1084,9 +1160,9 @@
 			$scope.delete_confirmation_pending = false;
 			transactionFactory.delete_all(function(result){
 				if (result.error){
-					userFactory.log('error', "Error while mass deleting: " + JSON.stringify(result.error));
+					console.log("Error while mass deleting: " + JSON.stringify(result.error));
 				} else {
-					userFactory.log('message', "All transactions deleted.  Server response: " + JSON.stringify(result));
+					//console.log( "All transactions deleted.  Server response: " + JSON.stringify(result));
 				}
 			})
 		}
@@ -1097,25 +1173,25 @@
 				raw_update.lines[i] = raw_update.lines[i].split('\t');
 			}
 			if (raw_update.lines.length < 2){
-				userFactory.log('error', "Update must contain at least 2 lines.");
+				console.log("Update must contain at least 2 lines.");
 			} else {
 				$scope.display_prep = raw_update.lines;
-				userFactory.log('message', "New transactions prepared for upload.");
+				console.log( "New transactions prepared for upload.");
 			}
 		}
 		$scope.create_transactions = function(){
 			transactionFactory.create_transactions($scope.display_prep, function(data){
 				if (data.error){
-					userFactory.log("error", "Error uploading transactions: " + data.error);
+					console.log("Error uploading transactions: " + data.error);
 				} else {
 					userFactory.log("New transactions uploaded.  Server response: " + JSON.stringify(data.result));
 				}
 			})
 		}
-		$scope.create_transaction = function(new_payment){
+		$scope.create_transaction = function(new_payment){ //on partial it is new_transaction.  Not sure why I chose to pass it in this way
 			transactionFactory.create_transaction(new_payment, function(data){
 				if (data.error){
-					userFactory.log('error', 'Error creating transaction: ' + data.error);
+					console.log('Error creating transaction: ' + data.error);
 				} else {
 					/*var used_date = $scope.new_transaction.date;
 					used_date = new Date(used_date);
@@ -1126,7 +1202,12 @@
 					}
 					$scope.$apply($scope.new_transaction.date = used_date.toLocaleDateString());*/
 					$scope.saved_transaction = data.saved_transaction;
-					userFactory.log("message", 'Transaction created.');
+					if ($scope.retain_form_entries === false){
+						for (this_key in $scope.new_transaction){
+							$scope.new_transaction[this_key] = "";
+						}
+					}
+					//console.log('Transaction created.');
 				}
 			})
 		}
@@ -1134,7 +1215,7 @@
 	myApp.controller('unitsController', ['$scope', 'unitFactory', 'userFactory', function($scope, unitFactory, userFactory){
 		unitFactory.index({populate: true}, function(these_units){
 			if (these_units.error){
-				userFactory.log('error', "Error retrieving unit index: " + these_units.error);
+				console.log("Error retrieving unit index: " + these_units.error);
 			} else {
 				$scope.unit_index = these_units.index;
 			}
@@ -1142,21 +1223,21 @@
 		$scope.create = function(new_unit){
 			unitFactory.create(new_unit, function(new_index){
 				if (new_index.error){
-					userFactory.log('error', "Error creating unit: " + new_index.error);
+					console.log("Error creating unit: " + new_index.error);
 				} else {
 					$scope.unit_index = new_index.index;
-					userFactory.log('message', "Unit created");
+					//console.log( "Unit created");
 				}
 			})
 		}
 		$scope.update = function(this_unit){
 			unitFactory.update(this_unit, function(new_index){
 				if (new_index.error){
-					userFactory.log('error', "Error updating unit: " + new_index.error);
+					console.log("Error updating unit: " + new_index.error);
 
 				} else {
 					$scope.unit_index = new_index.index;
-					userFactory.log('message', "Unit updated.");
+					//console.log( "Unit updated.");
 				}
 			})
 		}
@@ -1193,8 +1274,8 @@
 			//$scope.this_new_history = this_new_history;
 			//$scope.daily_result = these_balances;
 	</script>
-	<script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
-	<meta name="google-signin-client_id" content="544028406258-p756lflvl7dqrap03ajh3kogfmc873pf.apps.googleusercontent.com">
+	<!--<script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+	<meta name="google-signin-client_id" content="544028406258-p756lflvl7dqrap03ajh3kogfmc873pf.apps.googleusercontent.com">-->
 </head>
 <body ng-app='myApp'>
  	<div ng-view></div>

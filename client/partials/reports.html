@@ -15,7 +15,7 @@
 						<span class='slightly_small tooltiptext'>Click to view full account history</span>
 					</div>
 				</td>
-				<td ng-bind='balance | currency'></td>
+				<td ng-class='{green: (balance > 0.005), red: (balance < -0.005)}' ng-bind='balance | currency'></td>
 				<td class='tooltip'><span ng-show='deposit_index[unit].pet_deposit'><span class='slightly_small tooltiptext'>Pet\nDeposit</span>P</span></td>
 				<td class='tooltip'><span ng-show='deposit_index[unit].sublease_deposit'><span class='slightly_small tooltiptext'>Sublease Deposit</span>S</span></td>
 			</tr>
@@ -36,7 +36,7 @@
 		</table>
 	</div>
 	<div class='unit_account main_data'>
-		<div ng-show='this_report' class='full_history'>
+		<div ng-show='this_report' class='slightly_small_text full_history'>
 			<h2>Account History for Unit <span ng-bind='reported_unit'></span></h2>
 			<table>
 				<tr>
@@ -68,7 +68,7 @@
 				</tr>
 			</table>
 		</div>
-		<div class='report_chart'>>
+		<div class='report_chart'>
 			<h2>Account Balance Over Time</h2>
 			<nvd3 data='report_chart_data' options='report_chart_options'></nvd3>
 		</div>

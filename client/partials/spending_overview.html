@@ -1,0 +1,11 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div>
+	<h1> Coop Income & Spending History</h1>
+	<h2> Expense Graph</h2>
+	<p>View: <input type='submit' ng-click='expense_view("overview")' value='Overview'> | <input type='submit' ng-click='expense_view("maintenance")'  value='Maintenance Detail'> | <input type='submit' ng-click='expense_view("utilities")'  value='Utilities Detail'> | <input type='submit' ng-click='expense_view("other_expenses")'  value='Other Expenses Detail'></p>
+	<nvd3 options='chart_options' data='expense_chart_data' api='expense_api'></nvd3>
+	<h2> Account Balances</h2>
+	<nvd3 options='balance_histories_options' data='balance_histories_data'></nvd3>
+	<h2> Income Graph</h2>
+	<nvd3 options='chart_options' data='income_chart_data'></nvd3>
+</div>

@@ -7,6 +7,10 @@
     "mongoose": "latest",
    	"fs": "latest",
    	"bcryptjs": "latest",
-   	"angular-nvd3": "latest"
+   	"angular-nvd3": "latest",
+    "passport": "latest",
+    "passport-local": "latest",
+    "express-session": "latest",
+    "connect-mongo": "latest"
   }
 }

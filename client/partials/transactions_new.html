@@ -51,6 +51,9 @@
 		<p>Notes: <input type='text' ng-model='new_transaction.notes'></p>
 		<p>
 			<input type='submit' ng-click='create_transaction(new_transaction)' value='Create New Transaction'>
+			<label><input type='checkbox' ng-model='retain_form_entries'>Retain form entries after creating transaction</label>
+			<p>checkbox should be <span ng-show='retain_form_entries == true'>True</span><span ng-show='retain_form_entries == false'>False</span></p>
+		</p>
 	</div>
 	<hr>
 	<p><span ng-show='!delete_confirmation_pending'>Delete all Transactions:</span><span ng-show='delete_confirmation_pending'>Really?  All of them?</span></p>

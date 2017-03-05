@@ -1,0 +1,141 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<div>
+	<h1> Coop Income & Spending History</h1>
+	<table class='spending_history'>
+		<tr>
+			<th colspan='3'><h1>Expenses</h1></th>
+		</tr>
+		<tr>
+			<th colspan='3'><h2>Taxes, Loan, Insurance</h2></th>
+			<th ng-class="{budget: (year === '2017')}" ng-repeat="(year, unimportant) in these_years"><h3 class='year'><span ng-show='year === "2017"' id='budget_display'>Budget </span><span ng-bind='year'></span></h3></th>
+			<th colspan='3'><p>per month's dues</p><p>($385 &nbsp&nbsp | &nbsp&nbsp $420 &nbsp&nbsp | &nbsp&nbsp $440)</p></th>
+		</tr>
+		<tr ng-repeat="(this_category, these_amounts) in supercategory_index.Taxes">
+			<td></td>
+			<th colspan='2'><h3 ng-bind="this_category"></h3></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, also_unimportant) in these_years" ng-bind="these_amounts[year] | currency"></td>
+			<td>not yet implemented</td>
+		</tr>
+		<tr>
+			<td></td>
+			<th colspan='2' ng-class="{'subcategory': (this_category != 'Total')}"><h3>Mortgage Total</h3></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, amount) in supercategory_index.Mortgage.Total" ng-bind='amount | currency'></td>
+		</tr>
+		<tr>
+			<td></td>
+			<th colspan='2' ng-class="{'subcategory': (this_category != 'Total')}"><p>Mortgage Principal</p></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, amount) in supercategory_index.Mortgage.Principal"><p ng-bind='amount | currency'></p></td>
+		</tr>
+		<tr>
+			<td></td>
+			<th colspan='2' ng-class="{'subcategory': (this_category != 'Total')}"><p>Mortgage Interest</p></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, amount) in supercategory_index.Mortgage.Interest"><p ng-bind='amount | currency'></p></td>
+		</tr>
+		<!--<tr ng-repeat="(this_category, these_amounts) in supercategory_index.Mortgage">
+			<td></td>
+			<th colspan='2' ng-class="{'subcategory': (this_category != 'Total')}" ng-bind="this_category"></th>
+			<td class='data' ng-repeat="(year, also_unimportant) in these_years" ng-bind='these_amounts[year] | currency'></td><!--mustn't iterate through category's own year list because it may be missing some
+		</tr>-->
+		<tr ng-repeat='(this_category, these_amounts) in supercategory_index["Insurance"]'>
+			<td></td>
+			<th colspan='2'><h3 ng-bind='this_category'></h3></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, also_unimportant) in these_years" ng-bind='these_amounts[year] | currency'></td>
+		</tr>
+		<tr class='spacer'></tr>
+		<tr>
+			<th colspan='3'><h2>Utilities</h2></th>
+			<th ng-class="{budget: (year === '2017')}" ng-repeat="(year, unimportant) in these_years"><h3 class='year'><span ng-show='year === "2017"'>Budget </span><span ng-bind='year'></span></h3></th>
+		</tr>
+		<tr ng-repeat='(this_category, these_amounts) in supercategory_index.Utilities'>
+			<td></td>
+			<th colspan='2'><h3 ng-bind='this_category'></h3></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, also_unimportant) in these_years" ng-bind='these_amounts[year] | currency'></td>
+		</tr>
+		<tr></tr>
+		<tr>
+			<th colspan='3'><h2>Other Expenses</h2></th>
+			<th ng-class="{budget: (year === '2017')}" ng-repeat="(year, unimportant) in these_years"><h3 class='year'><span ng-show='year === "2017"'>Budget </span><span ng-bind='year'></span></h3></th>
+		</tr>
+		<tr ng-repeat='(this_category, these_amounts) in supercategory_index["Other Expenses"]'>
+			<td></td>
+			<th colspan='2'><h3><span ng-bind='this_category'></span><span ng-show='this_category === "Total"'> (Other Exps)</span></h3></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, also_unimportant) in these_years" ng-bind='these_amounts[year] | currency'></td>
+		</tr>
+		<tr class='spacer'></tr>
+		<tr>
+			<th colspan='3'><h2>Maintenance & Repair</h2></th>
+			<th ng-class="{budget: (year === '2017')}" ng-repeat="(year, unimportant) in these_years"><h3 class='year'><span ng-show='year === "2017"'>Budget </span><span ng-bind='year'></span></h3></th>
+			<td><button ng-click='toggle("maintenance")'>Display/Hide subcategories</button> </td>
+		</tr>
+		<tr ng-show='show_these.maintenance || (this_category === "Total")' ng-repeat='(this_category, these_amounts) in supercategory_index.Maintenance'>
+			<td></td>
+			<th colspan='2' ng-class='{"subcategory": (this_category != "Total")}'><h3><span ng-bind='this_category'></span><span ng-show='this_category === "Total"'> (Maint/Repair)</span></h3></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, also_unimportant) in these_years" ng-bind='these_amounts[year] | currency'></td>
+		</tr>
+		<tr>
+			<td colspan='3'><h1>Expense Totals</h1></td>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat='(year, total) in supercategory_index["Expense Totals"]' ng-bind='(total + supercategory_index.Mortgage.Total[year] + supercategory_index.Taxes["Property Tax"][year]) | currency'></td><!-- this should be safe to iterate over though -->
+		</tr>
+		<tr class='spacer'></tr>
+		<tr>
+			<th colspan='3'><h1>Income</h1></th>
+		</tr>
+		<tr>
+			<th colspan='3'></th>
+			<th ng-class="{budget: (year === '2017')}" ng-repeat="(year, unimportant) in these_years"><h3 class='year'><span ng-show='year === "2017"'>Budget </span><span ng-bind='year'></span></h3></th>
+		</tr>
+		<tr ng-repeat="(this_category, these_amounts) in supercategory_index.Income" ng-if='!(this_category === "Total")'>
+			<td></td>
+			<th colspan='2'><h3 ng-bind="this_category"></h3></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat="(year, also_unimportant) in these_years" ng-bind="these_amounts[year] | currency"></td>
+		</tr>
+		<tr>
+			<th colspan='3'><h1>Income Totals</h1></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat='(year, total) in supercategory_index["Income"].Total' ng-bind='total | currency'></td><!-- this should be safe to iterate over though -->
+		</tr>
+		<tr ng-show='false'><!-- can and should reconcile this later -->
+			<th colspan='3'><h2>Income in Database</h2></th>
+			<td class='data' ng-repeat='(year, total) in recorded_incomes' ng-bind='total | currency'></td>
+		</tr>
+		<tr class='spacer'></tr>
+		<tr>
+			<th colspan='3'><h2>Income - Expenses</h2></th>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat='(year, also_unimportant) in these_years' ng-bind='(supercategory_index["Income"].Total[year] - supercategory_index["Expense Totals"][year] - supercategory_index.Mortgage.Total[year] - supercategory_index.Taxes["Property Tax"][year]) | currency'></td>
+		</tr>
+	</table>
+	<hr>
+	<input type='submit' class='top slightly_small' ng-click='toggle("new_line_form")' ng-show='admin' value='Show/Hide new category form'>
+	<input type='submit' class='top slightly_small' ng-click='toggle("new_balance_history_form")' ng-show='admin' value='Show/Hide new balance history form'>
+	<form class='new_budget_line' ng-show='show_these.new_line_form'>
+		<p>Input New Budget Line:</p>
+		<p>Category: <input type='text' ng-model='new_line.category'></p>
+		<p>This category is <label><input type='checkbox' ng-model='new_line.is_income'> Income</label><label><input type='checkbox' ng-model='new_line.is_maintenance'> Maintenance</label>.</p>
+		<p>Amounts:</p>
+		<p><button ng-click='check_all()'>Check all completed years</button></p>
+		<table>
+			<tr ng-repeat="(year, data) in these_years">
+				<td><input type='checkbox' ng-model='data.included' checked></td>
+				<td ng-bind='year'></td>
+				<td><input type='text' ng-disabled='!data.included' ng-model='data.amount'></td>
+			</tr>
+		</table>
+		<input type='submit' ng-click='create_budget_line(new_line)' value='Create Category'>
+	</form>
+	<form class='new_balance_history' ng-show='show_these.new_balance_history_form'>
+		<p>Input New Balance History:</p>
+		<p>Account Name: <input type='text' ng-model='new_balance_history.account_name'></p>
+		<p ng-class="{error: (new_balance_history.dates.split('\n').length != new_balance_history.values.split('\n').length)}">
+			Dates entered: <span ng-bind="new_balance_history.dates.split('\n').length"></span>, 
+			Balances entered: <span ng-bind="new_balance_history.values.split('\n').length"></span>
+			.  <input type='submit' ng-click='create_balance_history(new_balance_history)' value='Create'>
+		</p>
+		<div class='new_history_box'>
+			<p>Dates:</p>
+			<textarea ng-model='new_balance_history.dates' rows='150' cols='30'></textarea>
+		</div>
+		<div class='new_history_box'>
+			<p>Balances:</p>
+			<textarea ng-model='new_balance_history.values' rows='150' cols='30'></textarea>
+		</div>
+	</form>
+</div>

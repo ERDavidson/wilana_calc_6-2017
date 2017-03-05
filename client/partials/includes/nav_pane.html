@@ -1,63 +1,4 @@
 <div class='header_pane' ng-controller='appController'>
-	<div class='session_box not_block'>
-		<h3 ng-show='false' ng-bind='welcome()'></h3>
-		<div ng-show='!logged_in' class='login'>
-			<h3>Please log in.</h3>
-			<hr>
-			<table>
-				<tr>
-					<td>Unit #: </td>
-					<td><select ng-model='login_info.unit' class='credentials' ng-options='user_object.unit as user_object.unit for (user, user_object) in user_list'></select></td>
-				</tr>
-				<tr>
-					<td>Password: </td>
-					<td><input type='password' class='credentials' ng-keyup="$event.keyCode == 13 && login(login_info)" ng-model='login_info.pw'></td>
-				</tr>
-			</table>
-			<input type='submit' class='bottom login_button' ng-click='login(login_info)' value='Log In'>
-			<p>Or with Google:</p>
-			<div class='not_block'>standard version: <div class="g-signin2" data-onsuccess="onSignIn"></div></div>
-			<div class='not_block'>old alternate that didn't work:<input type='submit' ng-click='googlelogintest()' value='run test'></div>
-			<div class='not_block'>load_gin method:<div class='gin_wrapper' ng-click='load_gin()'></div></div>
-		</div>
-		<div ng-show='!logged_in' class='login'>
-			<h3>Or register:</h3>
-			<hr>
-			<table>
-				<tr>
-					<td>Unit #: </td>
-					<td><input type='text' class='credentials' ng-model='new_user.unit'></td>
-				</tr>
-				<tr>
-					<td>Password: </td>
-					<td><input type='password'  class='credentials' ng-model='new_user.pw'></td>
-				</tr>
-				<tr>
-					<td>Confirm Password: </td>
-					<td><input type='password'  class='credentials' ng-model='new_user.pw_confirm'></td>
-				</tr>
-			</table>
-			<input type='submit' class='slightly_small_text login_button' ng-disabled='!new_user.unit || !new_user.pw' ng-click='register(new_user)' value='Register New User'>
-		</div>
-		<div ng-show='logged_in'>
-			<p>
-				<input type='submit' ng-click='logout()' value='Log Out (standard)'>
-				<input type='submit' ng-click='logout_google()' value='Log Out (via Google)'>
-				<input type='submit' ng-show='!edit_user' ng-click='edit_user = true' value='Edit Password'>
-			</p>
-			<form ng-show='edit_user'>
-				<p>
-					<select ng-model='updated_user.unit' class='credentials' ng-options='user_object.unit as user_object.unit for (user, user_object) in user_list'></select>
-					<input type='submit' ng-show='edit_user' ng-click='edit_user = false' value='Cancel Edit PW'>
-					<input type='submit' ng-show='edit_user' ng-click='update_user()' value='Submit Updated Password'>
-				</p>
-				<p>
-					New Password: <input type='password' class='credentials' ng-model='updated_user.pw_hash'>
-					Confirm Password: <input type='password' class='credentials' ng-model='updated_user.pw_confirm'>
-				</p>
-			</form>
-		</div>
-	</div>
 	<div class='nav_box'>
 		<h1 class='center_horiz'>Wilana Cooperative</h1>
 		<div class='link_line center_horiz' ng-show='current_user'>
@@ -79,10 +20,10 @@
 				</div>
 				<div class='link_line_2_folders' ng-switch-when="budget_spending">
 				<!--<span class='nav_submenu' ng-show='nav_topic === "budget_spending"'>-->
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/budget/overview'}" href='#/spending/overview/'>Overview</a> &nbsp&nbsp|&nbsp&nbsp
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/budget/tables'}" href='#/spending/tables/'>Category Tables</a> &nbsp&nbsp|&nbsp&nbsp 
 					<a ng-class="{'link_tab': true, 'current_view': this_view === '/taxes'}" href='#/taxes/'>Taxes</a> &nbsp&nbsp|&nbsp&nbsp 
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/mortgage'}" href='#/mortgage/'>Blanket Mortgage</a> &nbsp&nbsp|&nbsp&nbsp 
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/budget'}" href='#/budget/'>Current Budget</a> &nbsp&nbsp|&nbsp&nbsp
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/spending_history'}" href='#/spending_history/'>Spending History</a>  
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/mortgage'}" href='#/mortgage/'>Blanket Mortgage</a>
 				</div>
 				<div class='link_line_2_folders' ng-switch-when="directory_docs">
 				<!--<span class='nav_submenu' ng-show='nav_topic === "directory_docs"'>-->
@@ -97,7 +38,72 @@
 			</div>
 		</div>
 	</div>
-	<div class='log_box'>
+	<div class='session_box not_block'>
+		<h3 ng-show='false' ng-bind='welcome()'></h3>
+		<p ng-show='!logged_in'>Please <input type='submit' ng-click='toggle_form("login")' value='log in'> or <input type='submit' ng-click='toggle_form("register")' value='register'></p>
+		<hr>
+		<form ng-show='(!logged_in && show_this === "login")' class='login animate-login_reg'>	
+			<table>
+				<tr>
+					<td>Unit #: </td>
+					<td><select ng-model='login_info.unit' class='credentials' ng-options='user_object.unit as user_object.unit for (user, user_object) in user_list'></select> </td>
+					<td> Password:</td>
+					<td><input type='password' class='credentials' ng-keyup="$event.keyCode == 13 && login(login_info)" ng-model='login_info.pw'></td>
+				</tr>
+				<tr>
+					<td colspan='2'><input type='submit' class='bottom login_button' ng-click='login(login_info)' value='Log In'></td>
+					<td colspan='2'><input type='submit' class='bottom login_button' ng-click='login_psspti()' value='test Passport login'></td>
+				</tr>
+			</table>
+		</form>
+		<div ng-show='(!logged_in && show_this === "register")' class='login animate-login_reg'>
+			<table>
+				<tr>
+					<td>Unit #: </td>
+					<td><input type='text' class='credentials' ng-model='new_user.unit'> </td>
+					<td> Password:</td>
+					<td><input type='password'  class='credentials' ng-model='new_user.pw'></td>
+				</tr>
+				<tr>
+					<td colspan='2'>
+						<input type='submit' class='slightly_small_text login_button' ng-disabled='!new_user.unit || !new_user.pw' ng-click='register(new_user)' value='Register New User'> 
+					</td>
+					<td> Confirm Password:</td>
+					<td><input type='password' class='credentials' ng-model='new_user.pw_confirm'></td>
+				</tr>
+			</table>
+		</div>
+		<div class='login' ng-show='logged_in'>
+			<p>
+				<input type='submit' ng-click='logout()' value='Log Out'> | 
+				<!--<input type='submit' ng-click='logout_google()' value='Log Out w/ Google (test)'> -->
+				<input type='submit' ng-show='!edit_user' ng-click='edit_user = true' value='Edit User Info'>
+				<span ng-show='edit_user'>
+					<input type='submit' ng-click='edit_user = false' value='Cancel Edit'> | 
+					<input type='submit' ng-click='update_user()' value='Submit Update'>
+				</span>
+			</p>
+			<form ng-show='edit_user'>
+				<table>
+					<tr>
+						<td>Email:</td>
+						<td colspan='2'><input type='text' ng-model='updated_user.email'> </td>
+						<td> Password:</td>
+						<td><input type='password' class='credentials' ng-model='updated_user.pw_hash'></td>
+					</tr>
+					<tr>
+						<td>Unit:</td>
+						<td><select ng-model='updated_user.unit' class='credentials' ng-options='user_object.unit as user_object.unit for (user, user_object) in user_list'></select> </td>
+						<td colspan='2'> Confirm Password:</td>
+						<td><input type='password' class='credentials' ng-model='updated_user.pw_confirm'></td>
+					</tr>
+				</table>
+			</form>
+		</div>
+	</div>
+</div>
+<!--<div class='boundary'></div>-->
+<!--	<div class='log_box'>
 		<table class='log_table'>
 			<caption class='log_caption'>
 				<span>Message Log</span>
@@ -111,5 +117,4 @@
 				<td class='message' ng-bind='message.text'></td>
 			</tr>
 		</table>
-	</div>
-</div>
+	</div> -->

@@ -1,8 +1,24 @@
 <div ng-include="'./partials/includes/nav_pane.html'"></div>
 <div>
-	<h3>Future Preferences, {{admin}}</h3>
+	<h3>Email Reminders</h3>
+	<p>If you'd like to receive an email reminder to pay your monthly dues, just submit your email address using the box below.</p>
+	<p>Current status: 
+	<span ng-show='user_info.dues_reminder == ""'>Not signed up. | <input type='text' ng-model='reminder_email' placeholder='myemail@aol.com'><input type='submit' ng-click='update_reminder({action: "subscribe"})' value='Sign me up'></span>
+	<span ng-show='!(user_info.dues_reminder == "")'>Currently signed up as <span ng-bind='user_info.dues_reminder'></span> | <input type='submit' ng-click='update_reminder({action: "unsubscribe"})' value='Unsubscribe me'></span></p>
+</div><hr>
 <div ng-if='admin'>
-	<h3>Misc Admin Tools</h3>
+	<h2>Misc Admin Tools</h2>
+	<h3>Dues Reminder Subscriptions</h3>
+	<table>
+		<tr>
+			<th>Unit</th>
+			<th>email address</th>
+		 </tr>
+		 <tr ng-repeat='unit in these_units' ng-show='!(unit.dues_reminder == "")'>
+		 	<td ng-bind='unit.unit'></td>
+		 	<td ng-bind='unit.dues_reminder'></td>
+		 </tr>
+	</table>
 	<p><input type='submit' ng-click='unit_transaction_reference_health()' value='Check model reference health'></p>
 	<h3>Distinct color generation toy</h3>
 	<p>Number of colors desired: <input type='text' ng-model='colors.count'></p>
