@@ -7,3 +7,4 @@ var Dues_MatrixSchema = new mongoose.Schema({
 	timestamps: true
 });
 mongoose.model('Dues_Matrix', Dues_MatrixSchema);
+// eventually should add origin date as a matrix attribute instead of trusting factories to submit updates with correct indexes.

@@ -19,4 +19,22 @@
 			<td ng-bind = "key"></td>
 		</tr>
 	</table>
+	<input ng-show='show_update_form === false' type='submit' ng-click='show_update_form = true' value='Add New Dues'>
+	<table ng-show='show_update_form === true'>
+		<caption>Enter New Dues</caption>
+		<tr>
+			<th>Unit</th>
+			<th>Month</th>
+			<th>Year</th>
+			<th>Dues Amount</th>
+		</tr>
+		<tr>
+			<td>#<input type='text' ng-model='new_dues_info.unit_number'></td>
+			<td><input type='text' ng-model='new_dues_info.month'></td>
+			<td><input type='text' ng-model='new_dues_info.year'></td>
+			<td>$<input type='text' ng-model='new_dues_info.amount'></td>
+		</tr>
+	</table>
+	<input ng-show='show_update_form === true' type='submit' ng-click='append()' value='Submit Dues Update'>
+	<input ng-show='show_update_form === true' type='submit' ng-click='show_update_form = false' value='Hide Update Form'>
 </div>

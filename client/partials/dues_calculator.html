@@ -1,0 +1,34 @@
+<div ng-include="'./partials/includes/nav_pane.html'"></div>
+<h2>Dues rate calculator</h2>
+<hr>
+<div class='not_block'>
+	<h3>Budget Input</h3>
+	<table>
+		<tr>
+			<th>Net Property Tax Component:</th>
+			<td>$<input type='text' ng-model='component.tier'></td>
+		</tr>
+		<tr>
+			<th>Other Expense Component:</th>
+			<td>$<input type='text' ng-model='component.flat'></td>
+		</tr>
+	</table>
+	<input type='submit' ng-click='find_dues(" from view ")' value='Calculate Dues Rates'>
+</div>
+<div class='not_block'>
+	<h3>Resulting Dues:</h3>
+	<table>
+		<tr>
+			<th>Studios:</th>
+			<td ng-bind='result.studios | currency'></td>
+		</tr>
+		<tr>	
+			<th>Medium:</th>
+			<td ng-bind='result.medium | currency'></td>
+		</tr>
+		<tr>
+			<th>Large:</th>
+			<td ng-bind='result.large | currency'></td>
+		</tr>
+	</table>
+</div>

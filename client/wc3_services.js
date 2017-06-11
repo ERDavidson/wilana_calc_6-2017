@@ -36,7 +36,7 @@ wc3_services.factory('userFactory', ['$http', '$rootScope', function($http, $roo
 			if (!result.error){
 				factory.index(function(updated_user_list){
 					if (updated_user_list.error){
-						userFactory.log('error', "Error updating user list: " + updated_user_list.error);
+						console.log("error that used to go to user log")
 					} else {			
 						factory.user_index = updated_user_list.users;
 					}
@@ -113,7 +113,7 @@ wc3_services.factory('userFactory', ['$http', '$rootScope', function($http, $roo
 	}
 	factory.index(function(data){
 		if (data.error){
-			userFactory.log('error', "Error retrieving user list: " + data.error);
+			console.log('error', "Error retrieving user list: " + data.error);
 		} else {			
 			factory.user_index = data.users;
 		}
@@ -185,11 +185,11 @@ wc3_services.factory('balanceHistoryFactory', ['$http', 'toolFactory', 'userFact
 }]);
 wc3_services.factory('expenseFactory', ['$http', 'propertyTaxFactory', 'mortgageFactory', 'toolFactory', 'transactionFactory', 'userFactory', function($http, propertyTaxFactory, mortgageFactory, toolFactory, transactionFactory, userFactory){
 	var factory = {};
-	factory.index = function(callback){
+	factory.index = function(calling_controller, callback){
 		$http.post('/budget_lines').success(function(new_index){
 			//console.log("factory received new spending history index: " + JSON.stringify(new_index));
-			var expenses_by_supercategory = {"Expense Totals": {}, "Taxes": {}, "Mortgage": {"Total": {}}, "Insurance": {}, "Utilities": {}, "Other Expenses": {"Total": {}}, "Maintenance": {"Total": {}}, "Income": {"Total": {}}};
-			var supercategory_key = {"Sewer": "Utilities", "Gas": "Utilities", "Garbage": "Utilities", "Water": "Utilities", "Electricity": "Utilities", "Water Meter": "Utilities", "Property Tax": "Taxes", "Income Tax": "Taxes", "Sr Citizen Tax Refund": "Other Expenses", "Mortgage Principal": "Mortgage", "Mortgage Interest": "Mortgage", "Building Insurance": "Insurance", "Cleaning": "Other Expenses", "Building Supplies": "Other Expenses", "Garage Rent": "Other Expenses", "Tax Prep": "Other Expenses", "Legal Fees": "Other Expenses", "Fire Inspections": "Other Expenses", "Bank Charges": "Other Expenses", "Other Fees": "Other Expenses"};
+			var expenses_by_supercategory = {"Expense Totals": {}, "Taxes": {}, "Mortgage": {"Total": {}}, "Insurance": {}, "Utilities": {}, "Other Expenses": {"Total": {}}, "Maintenance": {"Total": {}}, "to/from (+/-) Reserve": {}, "Income": {"Total": {}}};
+			var supercategory_key = {"Sewer": "Utilities", "Gas": "Utilities", "Garbage": "Utilities", "Water": "Utilities", "Electricity": "Utilities", "Water Meter": "Utilities", "Property Tax": "Taxes", "Income Tax": "Taxes", "Sr Citizen Tax Refund": "Other Expenses", "Treasurer": "Other Expenses", "to/from (+/-) Reserve": "to/from (+/-) Reserve", "Mortgage Principal": "Mortgage", "Mortgage Interest": "Mortgage", "Building Insurance": "Insurance", "Cleaning": "Other Expenses", "Building Supplies": "Other Expenses", "Garage Rent": "Other Expenses", "Tax Prep": "Other Expenses", "Legal Fees": "Other Expenses", "Fire Inspections": "Other Expenses", "Bank Charges": "Other Expenses", "Other Fees": "Other Expenses"};
 			var add_to_total = function(category_values, supercategory){
 				if ("Total" in expenses_by_supercategory[supercategory]){
 					for (this_year in category_values){
@@ -223,7 +223,7 @@ wc3_services.factory('expenseFactory', ['$http', 'propertyTaxFactory', 'mortgage
 			var utilities_data = {"key": "Utilities", "color": supercategory_colors.color_strings[1], "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
 			var other_expenses_data =  {"key": "Other Expenses", "color": supercategory_colors.color_strings[2], "values": [[2007, 0], [2008, 0], [2009, 0], [2010, 0], [2011, 0], [2012, 0], [2013, 0], [2014, 0], [2015, 0], [2016, 0], [2017, 0]]};
 			var utilities_categories = ["Sewer", "Gas", "Garbage", "Water", "Electricity", "Water Meter"];
-			var other_expenses_categories = ["Cleaning", "Building Supplies", "Garage Rent", "Tax Prep", "Legal Fees", "Fire Inspections", "Bank Charges", "Other Fees", "Sr Citizen Tax Refund"];
+			var other_expenses_categories = ["Cleaning", "Treasurer", "Building Supplies", "Garage Rent", "Tax Prep", "Legal Fees", "Fire Inspections", "Bank Charges", "Other Fees", "Sr Citizen Tax Refund"];
 			var utilities_divert = false;
 			var other_expenses_divert = false;
 			var maintenance_categories = [];
@@ -355,7 +355,19 @@ wc3_services.factory('expenseFactory', ['$http', 'propertyTaxFactory', 'mortgage
 			new_index.expense_chart_detail = additional_data;
 			//console.log("Index reformatted and being returned as new_index.by_supercategory: " + JSON.stringify(new_index.by_supercategory));
 			//console.log("Returning new index_for_chart:" + JSON.stringify(new_index.index_for_chart));
-			callback(new_index);
+			var budget_year = years_to_show[years_to_show.length - 1];
+			console.log("non-dues income: " + (expenses_by_supercategory.Income.Total[budget_year] - expenses_by_supercategory.Income["Monthly Dues"][budget_year]));
+			console.log("non-mortgage, non-prop tax expenses: " + expenses_by_supercategory["Expense Totals"][budget_year]);
+			var dues_components = {
+				tier: (expenses_by_supercategory.Taxes["Property Tax"][budget_year] + expenses_by_supercategory["Other Expenses"]["Sr Citizen Tax Refund"][budget_year]), 
+				flat: (expenses_by_supercategory["Expense Totals"][budget_year] - expenses_by_supercategory["Other Expenses"]["Sr Citizen Tax Refund"][budget_year] - (expenses_by_supercategory.Income.Total[budget_year] - expenses_by_supercategory.Income["Monthly Dues"][budget_year]))
+			};
+			console.log(new_index);
+			if (calling_controller === "expenses"){
+				callback(new_index);
+			} else if (calling_controller === "duesCalc"){
+				callback(dues_components);
+			}
 		})
 	}
 	factory.create_budget_line = function(this_new_line, callback){
@@ -377,35 +389,6 @@ wc3_services.factory('expenseFactory', ['$http', 'propertyTaxFactory', 'mortgage
 				}
 			}
 			callback({"incomes": year_sums});
-		})
-	}
-	return factory;
-}]);
-wc3_services.factory('feedbackFactory', ['$http', 'userFactory', function($http, userFactory){
-	var factory = {};
-	factory.index = function(callback){
-		$http.get('/feedback').success(function(feedback_index){
-			callback(feedback_index);
-		})
-	}
-	factory.create_feedback = function(new_message, callback){
-		$http.post('/feedback/create', {new_message: new_message}).success(function(created_feedback){
-			callback(created_feedback);
-		})
-	}
-	factory.delete_feedback = function(old_id, callback){
-		var delete_path = '/feedback/' + old_id + "/delete";
-		$http.post(delete_path).success(function(deletion_result){
-			callback(deletion_result);
-		})
-	}
-	factory.check_mail = function(){
-		factory.index(function(this_feedback){
-			//console.log("in mail callback with " + this_feedback.feedback_index.length + "mails");
-			if (this_feedback.feedback_index && this_feedback.feedback_index.length > 0){
-				//console.log("calling to userfact.log");
-				userFactory.log("message", "You've got user feedback!");
-			}
 		})
 	}
 	return factory;
@@ -566,7 +549,7 @@ wc3_services.factory('matrixFactory', ['$http', 'unitFactory', 'userFactory', fu
 			//console.log("about to transactionify dues for unit " + bump_tell_count('tell') + " with a bound of " + months_to_date + " months.");
 			$http.post('/trim_matrix', {unit: bump_tell_count("bump"), months: months_to_date}).success(function(matrix_result){
 				if (matrix_result.error){
-					userFactory.log({"error": matrix_result.error});
+					console.log({"error": matrix_result.error});
 				} else {
 					factory.dues_as_transactions = factory.dues_as_transactions.concat(transactionify(matrix_result.dues_list, matrix_result.unit));
 				}
@@ -616,6 +599,17 @@ wc3_services.factory('matrixFactory', ['$http', 'unitFactory', 'userFactory', fu
 			callback(formatted_data);
 		})
 	};
+	factory.append = function(new_dues_info, callback){
+		var effective_month = new_dues_info.month + "/01/" + new_dues_info.year;
+		var month_index = factory.count_months({start_date: initial_date, end_date: effective_month});
+		month_index = month_index.count;
+		var update_path = "/dues_matrixes/" + new_dues_info.unit_number + "/update";
+		var update_body = {month: month_index, dues: new_dues_info.amount};
+		console.log("Ready to send update order body " + JSON.stringify(update_body) + " to " + update_path);
+		$http.post(update_path, update_body).success(function(data){
+			callback("factory response: " + JSON.stringify(data));	
+		})
+	}
 	return factory;
 }]);
 wc3_services.factory('mortgageFactory', ['$http', 'toolFactory', function($http, toolFactory){
@@ -665,7 +659,7 @@ wc3_services.factory('mortgageFactory', ['$http', 'toolFactory', function($http,
 			callback(data);
 		})
 	}
-	factory.index_by_year = function(callback){
+	factory.index_by_year = function(calling_controller, callback){
 		var mortgage_colors = toolFactory.make_rainbowSync({count: 3, groups: 0});
 		var mortgage_index_by_year = {
 			"for_table": {
@@ -734,7 +728,12 @@ wc3_services.factory('mortgageFactory', ['$http', 'toolFactory', function($http,
 				}
 				//console.log("thing I'm going to callback:");
 				//console.dir(mortgage_index_by_year);
-				callback(mortgage_index_by_year);
+				var dues_calc_budget_total = mortgage_index_by_year.for_table.Mortgage.Total[this_year];
+				if (calling_controller === "expenses"){
+					callback(mortgage_index_by_year);
+				} else if (calling_controller === "duesCalc"){
+					callback(dues_calc_budget_total);
+				}
 			}
 		})
 	}
@@ -766,7 +765,7 @@ wc3_services.factory('propertyTaxFactory', ['$http', function($http){
 			if (result.error){
 				callback(result);
 			} else {
-				var tax_year_keys = ["year_paid", "total", "bill_main", "land_val_main", "imp_val_main", "units_main", "per share", "tax_by_size", "bill_alt", "land_val_alt", "imp_val_alt", "units_alt", "unit_size_shares", "unit_size_numbers", "Actions"];
+				var tax_year_keys = ["year_paid", "total", "bill_main", "land_val_main", "imp_val_main", "units_main", "per share", "tax_by_size", "bill_alt", "reimbursement_alt", "total related", "land_val_alt", "imp_val_alt", "units_alt", "unit_size_shares", "unit_size_numbers", "Actions"];
 				var grouped_by_attribute = {};
 				var tax_by_size = {"Sr Citizen": [], "small": [], "medium": [], "large": []};
 				var distribute_tax = function(unit_size_shares, total_shares, main_bill, sr_bill, unit_3){  // arguments should be 1) the unit_size_shares database response attribute, 2) 93000 for total shares (until our number of sr citizens changes), and 3) & 4) main_bill & sr_bill amounts pulled from database. Only include a 5th unit_3 argument if unit 3 failed to pay that year.  It takes the form {denominator: <26 or 27 or "shares">} depending on the year being calculated.
@@ -851,6 +850,15 @@ wc3_services.factory('propertyTaxFactory', ['$http', function($http){
 									}
 								}
 							}
+						} else if (tax_year_keys[attribute_index] === "total related"){
+							var total_related = result.prop_tax_index[year_index].bill_main;
+							if (result.prop_tax_index[year_index].bill_alt){
+								total_related += result.prop_tax_index[year_index].bill_alt;
+							}
+							if (result.prop_tax_index[year_index].reimbursement_alt){
+								total_related += result.prop_tax_index[year_index].reimbursement_alt;
+							}
+							attribute_data.push(total_related);
 						} else {
 							attribute_data.push(JSON.stringify(result.prop_tax_index[year_index][tax_year_keys[attribute_index]]));
 							//console.log("defaulted to adding " + JSON.stringify(result.prop_tax_index[year_index][tax_year_keys[attribute_index]]) + " to attribute data for attribute " + tax_year_keys[attribute_index]);
@@ -865,6 +873,7 @@ wc3_services.factory('propertyTaxFactory', ['$http', function($http){
 					"Primary Bill": grouped_by_attribute.bill_main,
 					"Unit 3 occupied?": grouped_by_attribute.units_main,
 					"Sr Citizen Bill": grouped_by_attribute.bill_alt,
+					"Sr Citizen Refund": grouped_by_attribute.reimbursement_alt,
 					"Tax per share": grouped_by_attribute['per share'],
 					"Sr Citizen Tax": tax_by_size["Sr Citizen"],
 					"Tax per small unit": tax_by_size["small"],
@@ -874,7 +883,8 @@ wc3_services.factory('propertyTaxFactory', ['$http', function($http){
 					"Main Improvement Value": grouped_by_attribute.imp_val_main,
 					"Main Land Value": grouped_by_attribute.land_val_main, 
 					"Sr Citizen Improvement Value": grouped_by_attribute.imp_val_alt,
-					"Sr Citizen Land Value": grouped_by_attribute.land_val_alt
+					"Sr Citizen Land Value": grouped_by_attribute.land_val_alt,
+					"Total Tax-Related": grouped_by_attribute["total related"]
 				};
 				//console.log("constructed this index_by_attribute: " + JSON.stringify(index_by_attribute));
 				var brief_index = {for_chart: {"key": "Property Tax", "color": "#442222", "values": []}, for_table: {"2017": 47750}};
@@ -1026,6 +1036,7 @@ wc3_services.factory('reportFactory', ['$http', '$filter', 'matrixFactory', 'uni
 						return ("$" + d3.format(',.2f')(d));
 					}
 				},
+				"yDomain": [-7000, 0],
 				"zoom": {
 					"enabled": false
 				}
@@ -1203,8 +1214,8 @@ wc3_services.factory('unitFactory', ['$http', 'userFactory', function($http, use
 	*************/
 	//console.log("loading unitFactory");
 	var factory = {};
-	factory.unit_numbers = []; 	// is just a raw list of numbers.  no IDs or objects.  If you want a list with "Admin", go to userfactory
-	$http.get('/unit_numbers_index').success(function(data){ //this is intended to replace factory.numbers_index by pre-loading unit numbers & simplifying asynchrony
+	factory.unit_numbers = [1,2,3,4,5,6,7,8,9,10]; 	// is just a raw list of numbers.  no IDs or objects.  If you want a list with "Admin", go to userfactory
+	/*$http.get('/unit_numbers_index').success(function(data){ //this is intended to replace factory.numbers_index by pre-loading unit numbers & simplifying asynchrony
 		if (data.error){
 			userFactory.log({error: data.error});
 		} else {
@@ -1213,7 +1224,7 @@ wc3_services.factory('unitFactory', ['$http', 'userFactory', function($http, use
 				//console.log("finished preloading unitfactory unitnumbers");  //this has turned out to be of doubtful usefulness
 			}
 		}
-	});
+	});*/
 	factory.numbers_index = function(callback){
 		$http.get('/unit_numbers_index').success(function(data){
 			if (data.error){
@@ -1243,11 +1254,12 @@ wc3_services.factory('unitFactory', ['$http', 'userFactory', function($http, use
 		});
 	}
 	factory.create = function(new_unit, callback){
+		console.log("Posting to units/create with body " + JSON.stringify(new_unit));
 		$http.post('/units/create', new_unit).success(function(data){
 			if (data.error){
 				callback(data);
 			} else {
-				factory.index(function(these_units){
+				factory.index({populate: false}, function(these_units){
 					callback(these_units);
 				})
 			}

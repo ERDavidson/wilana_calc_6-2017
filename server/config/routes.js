@@ -37,6 +37,9 @@ router.post('/users/login', function(req,res){
 router.post('/users/logout', function(req,res){
 	users.logout(req,res);
 });
+router.post('/dues_matrixes/:unit_number/update', function(req,res){
+	dues_matrixes.update(req,res);
+})
 router.post('/dues_matrixes', function(req,res){
 	dues_matrixes.index(req,res);
 });
@@ -72,6 +75,9 @@ router.post('/budget_lines', function(req,res){
 router.post('/users', function(req,res){
 	users.index(req,res);
 });
+router.post('/units/create', function(req,res){
+	units.create(req,res);
+});
 router.post('/units/:id/update', function(req,res){
 	units.update(req,res);
 });
@@ -80,9 +86,6 @@ router.post('/units/:number', function(req,res){
 });
 router.post('/units', function(req,res){
 	units.index(req,res);
-});
-router.post('/units/create', function(req,res){
-	units.create(req,res);
 });
 router.post('/feedback/create', function(req,res){
 	messages.create(req,res);

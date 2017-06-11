@@ -1,39 +1,19 @@
 <div class='header_pane' ng-controller='appController'>
 	<div class='nav_box'>
-		<h1 class='center_horiz'>Wilana Cooperative</h1>
+		<h1 class='center_horiz'>Wilana Apartments</h1>
 		<div class='link_line center_horiz' ng-show='current_user'>
-			<a ng-class="{'current_view': nav_topic === 'unit_accounts'}" href="" ng-mouseover='new_nav_topic("unit_accounts")'>Unit Accounts</a> &nbsp&nbsp|&nbsp&nbsp 
-			<a ng-class="{'current_view': nav_topic === 'budget_spending'}" href="" ng-mouseover='new_nav_topic("budget_spending")'>Budget & Spending</a> &nbsp&nbsp|&nbsp&nbsp 
-			<a ng-class="{'current_view': nav_topic === 'directory_docs'}" href="" ng-mouseover='new_nav_topic("directory_docs")'>Directory & Documents</a> &nbsp&nbsp|&nbsp&nbsp 
-			<a ng-class="{'current_view': nav_topic === 'feedback_prefs'}" href="" ng-mouseover='new_nav_topic("feedback_prefs")'>Site Tools</a>
+			<a ng-class="{'current_view': nav_topic === 'unit_accounts'}" href="" ng-mouseover='new_nav_topic("unit_accounts")'>Unit Accounts</a>
 		</div>
 		<div class='link_line_2 center_horiz' ng-show='current_user'>
-			<div class='link_line_2_folder_container' ng-switch on='nav_topic'>
-				<div class='link_line_2_folders' ng-switch-when="unit_accounts">
+			<div class='link_line_2_folder_container'>
+				<div class='link_line_2_folders'>
 				<!--<span class='nav_submenu' ng-show='nav_topic === "unit_accounts"'>-->
 					<a ng-class="{'link_tab': true, 'current_view': this_view === '/matrix'}" href='#/matrix/'>Dues Rates</a> &nbsp&nbsp|&nbsp&nbsp 
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/reports'}" href='#/reports/'>Current Balance</a> &nbsp&nbsp|&nbsp&nbsp 
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/transactions'}" href='#/transactions/'>Search Transactions</a>
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/reports'}" href='#/reports/'>Current Balances</a> &nbsp&nbsp|&nbsp&nbsp
+					<a ng-class="{'link_tab': true, 'current_view': this_view === '/units'}" href='#/units/'>Unit Directory</a>
 					<span ng-show='admin'>
 						 &nbsp&nbsp|&nbsp&nbsp <a ng-class="{'link_tab': true, 'current_view': this_view === '/transactions/new'}" href='#/transactions/new'>New Transactions</a>
 					</span>
-				</div>
-				<div class='link_line_2_folders' ng-switch-when="budget_spending">
-				<!--<span class='nav_submenu' ng-show='nav_topic === "budget_spending"'>-->
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/budget/overview'}" href='#/spending/overview/'>Overview</a> &nbsp&nbsp|&nbsp&nbsp
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/budget/tables'}" href='#/spending/tables/'>Category Tables</a> &nbsp&nbsp|&nbsp&nbsp 
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/taxes'}" href='#/taxes/'>Taxes</a> &nbsp&nbsp|&nbsp&nbsp 
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/mortgage'}" href='#/mortgage/'>Blanket Mortgage</a>
-				</div>
-				<div class='link_line_2_folders' ng-switch-when="directory_docs">
-				<!--<span class='nav_submenu' ng-show='nav_topic === "directory_docs"'>-->
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/directory'}" href='#/units/'>Unit Directory</a> &nbsp&nbsp|&nbsp&nbsp 
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/documents'}" href='#/documents/'>Governing Documents & Useful Links</a>
-				</div>
-				<div class='link_line_2_folders' ng-switch-when="feedback_prefs">
-				<!--<span class='nav_submenu' ng-show='nav_topic === "feedback_prefs"'>-->
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/feedback'}" href='#/feedback/'>Feedback</a> &nbsp&nbsp|&nbsp&nbsp 
-					<a ng-class="{'link_tab': true, 'current_view': this_view === '/preferences'}" href='#/preferences/'>Preferences & Email Reminders</a>
 				</div>
 			</div>
 		</div>

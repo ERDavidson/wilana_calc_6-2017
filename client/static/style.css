@@ -15,6 +15,9 @@ h1{
 h2{
 	font-size: 1.4rem;
 }
+p{
+	display: block;
+}
 .row_legend{
 	width: 25px;
 	padding: 8px;
@@ -492,11 +495,12 @@ table.spending_history{
 .options_bar{
 	vertical-align: top;
 	display: inline-block;
-	width: 240px;
+	width: 200px;
 	height: 100%;
 	overflow-y: auto;
 	overflow-x: hidden;
-	padding-left: 6px;
+	padding-left: 3px;
+	padding-right: 3px;
 	background-color: rgb(121,118,117);
 }
 .options_bar .header{
@@ -509,11 +513,12 @@ table.spending_history{
 }
 .unit_button{
 	display: inline-block;
-	width: 32px;
-	height: 32px;
-	border-width: 4px;
+	width: 14px;
+	height: 14px;
+	border-width: 3px;
 	color: rgb(15,12,10);
 	cursor: default;
+	padding: 0;
 }
 .unpressed{
 	border-style: outset;
@@ -533,23 +538,26 @@ table.spending_history{
 }
 .button_label{
 	text-align: center;
-	margin: auto;
+	margin: 0;
 	user-select: none;
+	font-size: 0.75rem;
+	font-weight: 600;
 }
 .trans_filter{
-	font-size: 1.2rem;
-	padding: 3px 3px;
+	padding: 1px 1px;
+	text-align: center;
 }
 .small_button{
 	cursor: default;
 }
 .small_button .button_label{
 	vertical-align: 25px;
-	margin-top: 3px;
+	margin-top: 1px;
 	font-size: 1.1rem;
 }
 .trans_filter .button_label{
 	margin-top: 3px;
+	text-align: center;
 }
 .long_button{
 	display: inline-block;
@@ -593,10 +601,17 @@ table.spending_history{
 .filter_title{
 	display: inline-block;
 	width: 192px;
-	height: 59px;
 	color: rgb(200,200,200);
 	text-align: center;
-	margin: 10px;
+	margin: 4px;
+}
+.filter_datum{
+	text-align: right;
+	font-size: 0.9rem;
+	width: 77px;
+}
+.filter_box{
+	padding: 4px;
 }
 #type_buttons_header{
 	font-size: 1.3rem;
@@ -607,6 +622,9 @@ button{
 	border-style: outset;
 	color: rgb(15,12,10);
 	background-color: rgb(200,200,200);
+}
+li{
+	text-align: left;
 }
 .inverted{
 	background-color: rgb(15,12,10);

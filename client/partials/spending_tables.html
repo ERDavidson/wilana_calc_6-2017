@@ -75,6 +75,9 @@
 		<tr>
 			<td colspan='3'><h1>Expense Totals</h1></td>
 			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat='(year, total) in supercategory_index["Expense Totals"]' ng-bind='(total + supercategory_index.Mortgage.Total[year] + supercategory_index.Taxes["Property Tax"][year]) | currency'></td><!-- this should be safe to iterate over though -->
+		</tr>		<tr>
+			<td colspan='3'><h2>Reserve Transfer</h2></td>
+			<td ng-class="{budget: (year === '2017'), data: true}" ng-repeat='(year, amount) in supercategory_index["to/from (+/-) Reserve"]["to/from (+/-) Reserve"]' ng-bind='amount | currency'></td><
 		</tr>
 		<tr class='spacer'></tr>
 		<tr>

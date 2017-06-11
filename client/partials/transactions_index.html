@@ -3,6 +3,75 @@
 	<div class='options_bar'>
 		<h2>Filter Transactions</h2>
 		<div class='filter_title'>
+			<h3>Filter transactions by:</h3>
+			<ul>
+				<li><label><input type='checkbox' ng-model='selected_filters.by_unit.selected'>Unit</label></li>
+				<li><label><input type='checkbox' ng-model='selected_filters.by_date.selected'>Date</label></li> 
+				<li><label><input type='checkbox' ng-model='selected_filters.by_amount.selected'>Amount</label></li> 
+				<li><label><input type='checkbox' ng-model='selected_filters.by_check.selected'>Check Number</label></li> 
+				<li><label><input type='checkbox' ng-model='selected_filters.by_notes.selected'>Notes</label></li>
+			</ul>
+		</div>
+		<div class='filter_box' ng-show='selected_filters.by_unit.selected'>
+			<h3 class='filter_title'>Unit Filter Options</h3>
+			<div class='button_box'>
+				<div ng-repeat='number in unit_labels' ng-class="{ 'trans_filter unit_button': true, 'pressed': selected_filters.by_unit[number], 'unpressed': !selected_filters.by_unit[number]}" ng-click='toggle_filter_selection("by_unit", number)'><span class='button_label' ng-bind='number'>label</span></div>
+			</div>
+		</div>
+		<div class='filter_box' ng-show='selected_filters.by_date.selected'>
+			<h3 class='filter_title'>Date Filter Options</h3>
+			<table>
+				<tr>
+					<td class='filter_datum'>Newer than: </td>
+					<td class='filter_datum'><input type='text' class='credentials' ng-model='selected_filters.by_date.start_date'></td>
+				</tr>
+				<tr>
+					<td class='filter_datum'>Older than: </td>
+					<td class='filter_datum'><input type='text' class='credentials' ng-model='selected_filters.by_date.end_date'></td>
+				</tr>
+				<tr>
+					<td colspan='2' class='small'>(both dates inclusive)</td>
+				</tr>
+			</table>
+		</div>
+		<div class='filter_box' ng-show='selected_filters.by_amount.selected'>
+			<h3 class='filter_title'>Amount Filter Options</h3>
+			<table>
+				<tr>
+					<td class='filter_datum'>Minimum: $</td>
+					<td class='filter_datum'><input type='text' class='credentials' ng-model='selected_filters.by_amount.min'></td>
+				</tr>
+				<tr>
+					<td class='filter_datum'>Maximum: $</td>
+					<td class='filter_datum'><input type='text' class='credentials' ng-model='selected_filters.by_date.max'></td>
+				</tr>
+			</table>
+		</div>
+		<div class='filter_box' ng-show='selected_filters.by_check.selected'>
+			<h3 class='filter_title'>Check Filter Options</h3>
+			<table>
+				<tr>
+					<td class='filter_datum'>Check: #</td>
+					<td class='filter_datum'><input type='text' class='credentials' ng-model='selected_filters.by_check.number'></td>
+				</tr>
+			</table>
+		</div>
+		<div class='filter_box' ng-show='selected_filters.by_notes.selected'>
+			<h3 class='filter_title'>Notes Filter Options</h3>
+			<table>
+				<tr>
+					<td class='filter_datum'>Keyword: </td>
+					<td class='filter_datum'><input type='text' class='credentials' ng-model='selected_filters.by_notes.keyword'></td>
+				</tr>
+			</table>
+		</div>
+		<div class='filter_title'>
+			<input type='submit' ng-click='apply_filters()' value='Apply Filters'>
+		</div>
+
+
+		<!--
+		<div class='filter_title'>
 			<h3 class='trans_filter'><span class='button_label'>By Unit:</span></h3>
 			<div class='button_box'>
 				<div ng-repeat='this_button in unit_buttons | orderBy: "label"' ng-class="{ 'trans_filter unit_button': true, 'pressed': ((proposed_filters.unit) && (proposed_filters.unit.indexOf(this_button.label) != -1)), 'unpressed': ((!proposed_filters.unit) || (proposed_filters.unit.indexOf(this_button.label) === -1))}" ng-click='toggle_proposed_filter("unit", this_button.label)'>
@@ -28,7 +97,7 @@
 			</p>
 			<p class='trans-filter'>Newer than: <input type='text' ng-model='proposed_filters.date.greater_than'>, Older than: <input type='text' ng-model='proposed_filters.date.less_than'></p>
 		</div>
-			<div class='filter_title'>
+		<div class='filter_title'>
 			<p class='trans_filter'>
 				<span class='button_label'>By Amount:</span>
 			</p>
@@ -38,7 +107,7 @@
 			<h3 class='trans_filter'><span class='button_label'>By Keyword:</span></h3>
 			<input type='text' ng-model='proposed_filters.string'>
 		</div>
-		<input type='submit' ng-click='apply_filters()' value='Apply Filters'>
+		-->
 	</div>
 	<div class='main_data'>
 		<p ng-show='factory_response.message' ng-bind='factory_response.message'></p>
@@ -50,7 +119,7 @@
 		</table>
 		<p>Filters Applied: <span ng-repeat='(this_criterion, these_values) in active_filters'><span ng-bind='this_criterion'></span>: <span ng-bind='these_values'></span> | </span></p>
 		<table ng-show='((transactions_and_dues_index.length > 0) && !factory_response.message)'>
-			<caption><h2>Transactions Index</h2> (Displaying <span ng-bind='filtered_transactions.length'></span> <span ng-show='(filtered_transactions.length === 500)'>of at least 500</span> matching entries)</caption>
+			<caption><h2>Transactions Index</h2> (Displaying <span ng-bind='filtered_transactions.length'></span> <span ng-show='(filtered_transactions.length === 5000)'>of at least 5000</span> matching entries)</caption>
 			<tr>
 				<th><button type='submit' ng-class='{inverted: true, pressed: sort-criterion.search("_uni")}' ng-click='sort_by("_unit.number")'>
 					<span ng-show='sort_criterion.search("_") === 0'> ^ </span><span ng-show='sort_criterion.search("-_") === 0'> v </span>Unit
@@ -73,7 +142,7 @@
 				<th>Actions</th>
 			</tr>
 			<!--  filter: {type: active_filters.type} : or_filter  | filter: {date: active_filters.date} | filter: {amount: active_filters.amount}| |filter: {$: active_filters.string} } -->
-			<tr ng-repeat='this_transaction in transactions_and_dues_index | filter: {unit_number: active_filters.unit} : or_filter | filter: {check_no: active_filters.check_no} | limitTo: 500 | orderBy: sort_criterion as filtered_transactions'>
+			<tr ng-repeat='this_transaction in transactions_and_dues_index | filter: {unit_number: active_filters.unit} : or_filter | filter: {check_no: active_filters.check_no} | limitTo: 5000 | orderBy: sort_criterion as filtered_transactions'>
 				<td>
 					<span ng-show='(edit_lock.id != this_transaction._id) || (edit_lock.type != "edit")' ng-bind='this_transaction.unit_number'></span>
 					<input type='text' class='number_width' ng-show='(edit_lock.id === this_transaction._id) && (edit_lock.type === "edit")' ng-model='updated_transaction._unit.number'>

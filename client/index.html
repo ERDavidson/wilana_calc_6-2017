@@ -51,6 +51,10 @@
 				templateUrl: './partials/transactions_index.html',
 				controller: 'transactionsIndexController'
 			})
+			.when('/dues_calc', {
+				templateUrl: './partials/dues_calculator.html',
+				controller: 'duesCalcController'
+			})
 			.when('/units', {
 				templateUrl: './partials/units_index_new_edit.html'
 			})
@@ -62,14 +66,6 @@
 				templateUrl: './partials/mortgage.html',
 				controller: 'mortgagesController'
 			})
-			.when('/feedback', {
-				templateUrl: './partials/feedback.html',
-				controller: 'feedbacksController'
-			})
-			.when('/documents', {
-				templateUrl: './partials/documents.html',
-				controller: 'documentsController'
-			})
 			.when('/spending/overview', {
 				templateUrl: './partials/spending_overview.html',
 				controller: 'expensesController'
@@ -78,16 +74,12 @@
 				templateUrl: './partials/spending_tables.html',
 				controller: 'expensesController'
 			})
-			.when('/preferences', {
-				templateUrl: './partials/preferences.html',
-				controller: 'preferencesController'
-			})
 			.otherwise({
 				redirectTo: '/partials/welcome.html'
 			});
 	});
 	
-	myApp.controller('appController', ['$scope', '$rootScope', '$location', 'userFactory', 'reportFactory', 'transactionFactory', 'feedbackFactory', function($scope, $rootScope, $location, userFactory, reportFactory, transactionFactory, feedbackFactory){	
+	myApp.controller('appController', ['$scope', '$rootScope', '$location', 'userFactory', 'reportFactory', 'transactionFactory', function($scope, $rootScope, $location, userFactory, reportFactory, transactionFactory){	
 		//console.log("loading appController");
 		$scope.current_user = userFactory.current_user;
 		$scope.logged_in = userFactory.logged_in;
@@ -118,14 +110,7 @@
 			'/transactions': "Transaction Browser", 
 			'/transactions/new': "Transaction Entry", 
 			'/units': "Unit Directory",
-			'/taxes': "Property Tax Information",
-			'/mortgage': "Blanket Mortgage Status", 
 			'/login': "User Login",
-			'/feedback': "Submit Feedback",
-			'/documents': "Governing Documents & Useful Links",
-			'/budget/overview': "Budget & Spending Overview",
-			'/budget/tables': "Budget & Spending Category Tables",
-			'/preferences': "User Preferences & Email Reminder Signup",
 		};
 		$scope.this_page_title = $scope.page_titles[$location.url()];
 		$scope.location = $location.url();
@@ -136,7 +121,7 @@
 				$scope.user_list = user_index.users;
 			}
 		})
-		$scope.login_info = {unit: "Admin", pw: 'wilana_calc'};  //sets default login name.  remove for real use
+		$scope.login_info = {unit: "Admin", pw: 'Amasa7'};  //sets default login name.  remove for real use
 		$scope.welcome = function(){
 			if ($scope.admin === true){
 				return "Hi, Admin!";
@@ -146,16 +131,10 @@
 				return "You are not logged in.";
 			}
 		}
-		$scope.clear_log = function(){
-			userFactory.log("clear");
-		}
 		$scope.new_nav_topic = function(nav_topic){
 			userFactory.nav_topic = nav_topic;
 			$scope.nav_topic = userFactory.nav_topic;
 			//console.log("new nav topic: " + nav_topic);
-		}
-		$scope.refresh_log = function(){
-			$scope.$evalAsync(userFactory.log());
 		}
 		$scope.toggle_form = function(this_form){
 			if ($scope.show_this === this_form){
@@ -186,10 +165,6 @@
 					$scope.updated_user.email = userFactory.email;
 					//console.log("updated_user is now " + JSON.stringify($scope.updated_user));
 					$scope.admin = userFactory.admin;
-					if ($scope.admin){
-						//console.log("checking mail");
-						feedbackFactory.check_mail();
-					}
 					//console.log( "Login by email " + $scope.email + ", unit " + $scope.current_user + " completed.");
 					$location.url('/reports');
 				}
@@ -267,21 +242,33 @@
 			})
 		}
 	}]);
-	myApp.controller('documentsController', ['$scope', "userFactory", function($scope, userFactory){
-		$scope.current_user = userFactory.current_user;
-		$scope.admin = userFactory.admin;
-		$scope.library_info = {"prof_services": {label: "Professionals familiar with the Wilana", tooltip_info: "Plumbers, washing machine service hotline, etc.", show: true},  "links": {label: "Helpful IRS links", tooltip_info: "updated for tax year 2016", show: true}, "governing_docs": {label: "Wilana Governing Documents", tooltip_info: "not yet implemented", show: false}, "minutes": {label: "Meeting  Minutes", tooltip_info: "not yet implemented", show: false}};
-		$scope.toggle_library = function(library_section_key){
-			//console.log("library button clicked: " + library_section_key);
-			$scope.library_info[library_section_key].show = !($scope.library_info[library_section_key].show);
+	myApp.controller('duesCalcController', ['$scope', "expenseFactory", "mortgageFactory", "userFactory", function($scope, expenseFactory, mortgageFactory, userFactory){
+		$scope.result = {};
+		$scope.component = {tier: 0, flat: 0};
+		$scope.shares = {studios: 2950, medium: 3950, large: 4500};
+		$scope.scratch = {studios: {}, medium: {}, large: {}};
+		$scope.find_dues = function(){
+			for (key in $scope.shares){
+				$scope.scratch[key].tier_comp = ($scope.shares[key] / 96950) * $scope.component.tier;
+				$scope.scratch[key].flat_comp = $scope.component.flat / 27;
+				$scope.scratch[key].unrounded = $scope.scratch[key].tier_comp +  $scope.scratch[key].flat_comp;
+				$scope.scratch[key].rounded = Math.round($scope.scratch[key].unrounded / 60) * 60;
+				$scope.result[key] = $scope.scratch[key].rounded / 12;
+				console.log($scope.scratch[key].tier_comp + ", " + $scope.scratch[key].flat_comp + ", " + $scope.scratch[key].unrounded + ", " + $scope.scratch[key].rounded + ", " + $scope.result[key]);
+			}
 		}
-	}]);
-	myApp.controller('expensesController', ['$scope', 'expenseFactory', 'balanceHistoryFactory', 'mortgageFactory', 'userFactory', function($scope, expenseFactory, balanceHistoryFactory, mortgageFactory, userFactory){
+		expenseFactory.index("duesCalc", function(calc_components){
+			mortgageFactory.index_by_year("duesCalc", function(these_mortgage_expenses){
+				$scope.component = {tier: calc_components.tier.toFixed(2), flat: (calc_components.flat + these_mortgage_expenses).toFixed(2)};
+				$scope.find_dues();
+			})
+		});
+	}])
+	myApp.controller('expensesController', ['$scope', 'expenseFactory', 'balanceHistoryFactory', 'mortgageFactory', function($scope, expenseFactory, balanceHistoryFactory, mortgageFactory){
 		var today = new Date();
 		var heard_from = {"mortgageFactory": false, "expenseFactory": false};
 		var partial_expense_data = [];
 		var expense_detail_data = {maintenance: [], utilities: [], other_expenses: []};
-		$scope.admin = userFactory.admin;
 		$scope.new_line = {};
 		$scope.these_years = {}; 
 		$scope.current_categories = [];
@@ -298,7 +285,7 @@
 		for (year=2007;year<=today.getFullYear();year++){
 			$scope.these_years[year] = {};
 		}
-		expenseFactory.index(function(new_index){
+		expenseFactory.index("expenses", function(new_index){
 			if (new_index.error){
 				console.log("Error retrieving spending history index.");
 			} else {
@@ -369,7 +356,7 @@
 		expenseFactory.get_recorded_incomes(function(result){
 			$scope.recorded_incomes = result.incomes;
 		})
-		mortgageFactory.index_by_year(function(result){
+		mortgageFactory.index_by_year("expenses", function(result){
 			//$scope.expense_chart_data.push(result.for_chart[0]);
 			//$scope.expense_chart_data.push(result.for_chart[1]); //   this leaves off total for now
 			partial_expense_data = partial_expense_data.concat(result.for_chart.slice(0,2)); 
@@ -540,54 +527,12 @@
 			} 
 		}
 	}]);
-	myApp.controller('feedbacksController', ['$scope', 'feedbackFactory', 'userFactory', 'unitFactory', function($scope, feedbackFactory, userFactory, unitFactory){
-		$scope.current_user = userFactory.current_user;
-		$scope.reminder_email = $scope.current_user;
-		$scope.admin = userFactory.admin;
-		$scope.today = new Date();
-		$scope.submitted_feedback = false;
-		if ($scope.admin){
-			feedbackFactory.index(function(result){
-				if (result.error){
-					console.log("Error retrieving feedback index: " + result.err);
-				} else {
-					$scope.feedback_index = result.feedback_index;
-				}
-			})
-		}
-		$scope.create_feedback = function(new_message){
-			new_message.date = new Date();
-			new_message.unit = $scope.current_user;
-			feedbackFactory.create_feedback(new_message, function(result){
-				if (result.error){
-					console.log("Error submitting feedback: " + result.error);
-				} else {
-					$scope.feedback_submitted = true;
-					$scope.created_feedback = result.submitted_feedback;
-				}
-			})
-		}
-		$scope.delete = function(old_id){
-			feedbackFactory.delete_feedback(old_id, function(result){
-				if (result.error){
-					console.log("Error deleting feedback: " + result.error);
-				} else {
-					//console.log("Feedback deleted: " + JSON.stringify(result));
-					feedbackFactory.index(function(result){
-						if (result.error){
-							console.log("Error retrieving feedback index: " + result.err);
-						} else {
-							$scope.feedback_index = result.feedback_index;
-						}
-					})
-				}
-			})
-		}	
-	}]);
 	myApp.controller('matrixesController', ['$scope', 'matrixFactory', 'userFactory', function($scope, matrixFactory, userFactory){
 		$scope.dues_matrix = [];
 		$scope.month_labels = matrixFactory.count_months();
 		$scope.dues_matrix = {};
+		$scope.show_update_form = false;
+		$scope.new_dues_info = {unit_number: "", month: "", year: "", amount: null};
 		matrixFactory.index(function(data){
 			if (data.error){
 				console.log("Error retrieving dues rates: " + data.error);
@@ -596,6 +541,13 @@
 				//console.log( 'Dues rate matrix loaded.');
 			}
 		})
+		$scope.append = function(){
+			matrixFactory.append($scope.new_dues_info, function(result){
+				console.log("Factory response received: " + JSON.stringify(result));
+				$scope.new_dues_info.unit_number = "";
+				$scope.new_dues_info.amount = null;
+			})
+		}
 	}]);
 	myApp.controller('mortgagesController', ['$scope', 'mortgageFactory', 'userFactory', function($scope, mortgageFactory, userFactory){
 		$scope.new_mortgage = {};
@@ -764,88 +716,13 @@
 			}
 		}	
 	}]);
-	myApp.controller('preferencesController', ['$scope', 'reportFactory', 'userFactory', 'toolFactory', function($scope, reportFactory, userFactory, toolFactory){
-		$scope.admin = userFactory.admin;
-		//console.log("Dues reminder: ");
-		//console.log(userFactory.dues_reminder);
-		$scope.reminder_email = "";
-		$scope.user_info = userFactory.current_user_info;		// hoping this will update automatically with factory value.  if so, would be great to expand to entire app.  update:  seems to NOT update automatically, but is still potentially handy as a broad-range updater
-		$scope.these_units = userFactory.user_index.users;
-		if ($scope.user_info.dues_reminder  && ($scope.user_info.dues_reminder != "")){
-			$scope.reminder_selected = true;
-		}
-		$scope.colors = {};
-		$scope.new_colors = [];
-		$scope.update_reminder = function(these_parameters){ //parameters are currently {action: <"subscribe" or "unsubscribe">}
-			if (these_parameters.action === "unsubscribe"){
-				$scope.reminder_email = "";
-			}
-			userFactory.update_user({dues_reminder: $scope.reminder_email}, function(result){
-				//console.log(result);
-				//console.log(userFactory.current_user_info);
-				$scope.user_info = userFactory.current_user_info;
-				//console.log($scope.user_info);
-			})
-		}
-		$scope.unit_transaction_reference_health = function(){
-			reportFactory.reference_health(function(result){
-				if (result === "ok"){
-					console.log( "Unit & Transaction references look perfect.");
-				} else {
-					//console.log(JSON.stringify(result));
-					if (result.runaway_transactions.length > 0){
-						console.log("" + result.runaway_transactions.length + ' transactions believe themselves owned by a different unit.  See list in console.');
-						for (i=0;i<result.runaway_transactions.length;i++){
-							//console.log('Transaction: ' + JSON.stringify(result.runaway_transactions[i].transaction) + " and claimant, unit " + result.runaway_transactions[i].unit_number);
-						}
-					}
-					if (result.rejecting_units.length > 0){
-						console.log("" + result.rejecting_units.length + ' units reject clinging transactions.  See list in console.');
-						for (i=0;i<result.runaway_transactions.length;i++){
-							//console.log('Unit: ' + JSON.stringify(result.rejecting_units[i].unit) + " and clingant, transaction " + JSON.stringify(result.rejecting_units[i].transaction));			
-						}
-					}
-				}
-			})
-		}
-		$scope.make_rainbow = function(these_criteria){
-			//console.log("make_rainbow called with arguments: " + JSON.stringify(these_criteria));
-			//console.log(these_criteria);
-			toolFactory.make_rainbow(these_criteria, function(result){
-				if (result.error){
-					console.log("Rainbow failed: " + result.error);
-				} else {
-					//console.log("result received from factory: " + JSON.stringify(result));
-					$scope.new_colors = result.colors;
-					//console.log("new_colors is now " + JSON.stringify($scope.new_colors));
-				}
-			})
-		}
-		$scope.random_rainbow = function(count){
-			var all_these_colors = [];
-			for (x=0;x<count;x++){
-				var this_color = [];
-				for (i=0;i<3;i++){
-					this_color.push(Math.floor(Math.random()*255));
-					//console.log("pushed and made " + this_color);
-				}
-				all_these_colors.push({background_color: 'rgb(' + this_color[0] + ', ' + this_color[1] + ', ' + this_color[2] + ')'});
-			}
-			$scope.all_these_colors = all_these_colors;
-		}
-		$scope.my_background = function(these_rgb){
-			//console.log("in my_background with arguments: " + JSON.stringify(these_rgb));
-			var formatted = 'rgb(' + these_rgb.rosso + ', ' + these_rgb.verde + ', ' + these_rgb.azzuro + ')';
-			//console.log("converted to " + formatted);
-			return {background_color: formatted};
-		}
-	}]);
 	myApp.controller('reportsController', ['$scope', 'reportFactory', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, reportFactory, transactionFactory, unitFactory, userFactory){
 		$scope.date_for_sorting = transactionFactory.date_for_sorting;
 		$scope.active_unit_button = "";
 		$scope.admin = userFactory.admin;
 		$scope.current_user = userFactory.current_user;
 		$scope.chart_data = {};
+		$scope.report_format = "";
 		$scope.generate_report = function(this_unit_number){
 			if (!this_unit_number){
 				console.log("Please select a unit number.");
@@ -928,15 +805,14 @@
 					return ("$" + d3.format(',.2f')(d/100));
 				}
 			},
+			"yDomain": [-5000, 1000],
 			"zoom": {
 				"enabled": false
 			}
 		};
 		//console.log($scope.report_chart_options);
 	}]);
-	myApp.controller('taxesController', ['$scope', 'propertyTaxFactory', 'mortgageFactory', 'userFactory', function($scope, propertyTaxFactory, mortgageFactory, userFactory){
-		$scope.current_user = userFactory.current_user;
-		$scope.admin = userFactory.admin;
+	myApp.controller('taxesController', ['$scope', 'propertyTaxFactory', 'mortgageFactory', function($scope, propertyTaxFactory, mortgageFactory){
 		$scope.new_tax = {};
 		$scope.new_tax_options = {};
 		$scope.official_calcs = {small: [992.19,736.37,848.34,1021.00,1204.92,1274.59, 1379.46], medium: [992.19, 985.98, 1135.92, 1354.74, 1613.37, 1690.65, 1847.08], large: [992.19, 1123.27, 1294.08, 1538.30, 1838.01, 1919.49, 2104.27]};  // these are from a summary xls but they conflict with single year sheets
@@ -945,6 +821,7 @@
 				console.log("Error retrieving property taxes: " + prop_tax.error);
 			} else {
 				$scope.property_taxes_by_attribute = prop_tax.index_by_attribute;
+				console.log($scope.property_taxes_by_attribute);
 			}
 		})
 		$scope.create_tax = function(this_tax_info){
@@ -972,6 +849,69 @@
 	myApp.controller('transactionsIndexController', ['$scope', '$filter', 'filterFactory', 'transactionFactory', 'unitFactory', 'userFactory', function($scope, $filter, filterFactory, transactionFactory, unitFactory, userFactory){
 		$scope.edit_lock = {type: false, id: null};
 		$scope.updated_transaction = {};
+		$scope.unit_labels = unitFactory.unit_numbers;
+		$scope.filtered_index = [];
+		console.log($scope.unit_labels);
+		$scope.selected_filters = {
+			"by_unit": {
+				selected: false, 
+			}, 
+			"by_date": {
+				selected: false, 
+				start_date: "", 
+				end_date: ""
+			}, 
+			"by_type": {
+				selected: false, 
+			}, 
+			"by_amount": {
+				selected: false,
+				max: null,
+				min: null
+			}, 
+			"by_check": {
+				selected: false,
+				number: ""
+			}, 
+			"by_notes": {
+				selected: false,
+				keyword: ""
+			}
+		};
+		for (unit_index in $scope.unit_labels){
+			$scope.selected_filters.by_unit[String($scope.unit_labels[unit_index])] = false;
+		}
+		for (type_index in transactionFactory.allowed_types){
+			$scope.selected_filters.by_type[transactionFactory.allowed_types[type_index]] = false;
+		}
+		$scope.toggle_filter_selection = function(filter_type, filter_value){
+			$scope.selected_filters[filter_type][filter_value] = !$scope.selected_filters[filter_type][filter_value];
+			console.log($scope.selected_filters);
+		}
+		$scope.apply_filters = function(){
+			var active_filters = [];
+			var working_index = [];
+			var apply_filter_sequence= function(current_list, current_filter, filter_params){
+				console.log("Done with filter " + current_filter + " aka " + active_filters.shift());
+				if (active_filters.length > 0){
+					apply_filter_sequence(current_list, active_filters[0], filter_params);
+				} else {
+					$scope.filtered_index = current_list;
+				}
+			}
+			for (key in $scope.selected_filters){
+				if ($scope.selected_filters[key].selected === true){
+					active_filters.push(key);
+				}
+			}
+			if (active_filters.length > 0){
+				if (working_index === []){
+					working_index = $scope.transactions_and_dues_index;
+				}
+				apply_filter_sequence(working_index, active_filters[0], $scope.selected_filters);
+			}
+		}
+
 		$scope.proposed_filters = filterFactory.proposed_filters;
 		if (filterFactory.saved_filters){
 			filterFactory.saved_filters.restore($scope.proposed_filters);
@@ -1034,14 +974,14 @@
 			$scope.type_buttons.push({name: transaction_types[i], label: $scope.type_translations[transaction_types[i]], button_type: "type"});
 			//console.log("Type button born: " + JSON.stringify($scope.type_buttons[($scope.type_buttons.length -1)]));
 		}
-		$scope.apply_filters = function(){
+		$scope.apply_filters_old = function(){
 			//console.log("transactions controller apply filters method activated");
 			$scope.proposed_filters.activate($scope.active_filters);
 			filterFactory.saved_filters = $scope.active_filters;
 			//console.log("proposed filter status: " + JSON.stringify($scope.proposed_filters));
 			//console.log("active filter at end of filter application: " + JSON.stringify($scope.active_filters));
 		}
-		$scope.toggle_proposed_filter = function(attribute, value){
+		$scope.toggle_proposed_filter = function(attribute, value){  // old
 			if (attribute === "unit" || attribute === "type"){
 				if (!$scope.proposed_filters[attribute]){
 					$scope.proposed_filters[attribute] = [];
@@ -1167,10 +1107,20 @@
 			})
 		}
 		$scope.prepare_update = function(){
+			while ($scope.update_input.includes("$")){
+				$scope.update_input = $scope.update_input.replace("$", "");
+			}
+			while ($scope.update_input.includes(",")){
+				$scope.update_input = $scope.update_input.replace(",", "");
+			}
 			var raw_update = {};
 			raw_update.lines = $scope.update_input.split('\n');
 			for (i=0; i<raw_update.lines.length; i++){
 				raw_update.lines[i] = raw_update.lines[i].split('\t');
+			}
+			for (i=1;i<raw_update.lines[0].length;i++){
+				var this_date = new Date(raw_update.lines[0][i]);
+				raw_update.lines[0][i] = this_date.toLocaleDateString();
 			}
 			if (raw_update.lines.length < 2){
 				console.log("Update must contain at least 2 lines.");
@@ -1180,11 +1130,17 @@
 			}
 		}
 		$scope.create_transactions = function(){
+			while ($scope.update_input.includes("$")){
+				$scope.update_input = $scope.update_input.replace("$", "");
+			}
+			while ($scope.update_input.includes(",")){
+				$scope.update_input = $scope.update_input.replace(",", "");
+			}
 			transactionFactory.create_transactions($scope.display_prep, function(data){
 				if (data.error){
 					console.log("Error uploading transactions: " + data.error);
 				} else {
-					userFactory.log("New transactions uploaded.  Server response: " + JSON.stringify(data.result));
+					console.log("New transactions uploaded.  Server response: " + JSON.stringify(data.result));
 				}
 			})
 		}

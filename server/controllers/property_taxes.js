@@ -18,7 +18,7 @@ module.exports = {
 			land_val_main: req.body.land_val_main,
 			imp_val_main: req.body.imp_val_main,
 		});
-		var optional_keys = ["land_val_main", "imp_val_main", "units_main", "bill_alt", "land_val_alt", "imp_val_alt", "units_alt"];
+		var optional_keys = ["land_val_main", "imp_val_main", "units_main", "bill_alt", "reimbursement_alt", "land_val_alt", "imp_val_alt", "units_alt"];
 		for (i=0;i<optional_keys.length;i++){
 			if (req.body[optional_keys[i]]){
 				new_tax[optional_keys[i]] = req.body[optional_keys[i]];

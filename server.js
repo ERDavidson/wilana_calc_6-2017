@@ -16,7 +16,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
 app.use(session({
 	secret: "deep kitty",
-	store: new MongoStore({url: 'mongodb://dev_wilana_calc_3:17-wilana_calc_3-32@localhost/wilana_calc_three'})
+	store: new MongoStore({url: 'mongodb://localhost/wilana_calc_6-2017'})
 }));
 
 app.use(passport.initialize());

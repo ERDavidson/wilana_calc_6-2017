@@ -10,13 +10,13 @@ var res_result = function(res, err, result){
 }
 module.exports = {
 	create: function(req,res){
-		//console.log("Server controller unit create method opened.");
+		console.log("Server controller unit create method opened.");
 		Unit.findOne({number: req.body.number}, function(err, already_there){
 			if (err){
-				//console.log("Error while checking whether unit is already in database: " + err);
+				console.log("Error while checking whether unit is already in database: " + err);
 				res.json({error: "Error while checking whether unit is already in database: " + err});				
 			} else if (already_there != null){
-				//console.log("error in create method: Unit is already in database");
+				console.log("error in create method: Unit is already in database");
 				res.json({error: "Unit is already in database"});
 			} else {
 				this_unit = new Unit({
@@ -29,10 +29,10 @@ module.exports = {
 				});
 				this_unit.save(function(err){
 					if (err){
-						//console.log("Error saving new unit: " + err);
+						console.log("Error saving new unit: " + err);
 						res.json({error: "Error saving new unit: " + err});
 					} else {
-						//console.log("Unit entered into database without encountering errors: " + this_unit.number + ", " + this_unit.shareholder);
+						console.log("Unit entered into database without encountering errors: " + this_unit.number + ", " + this_unit.shareholder);
 						res.json({result: "ok"});		
 					
 					}

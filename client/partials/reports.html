@@ -2,6 +2,9 @@
 <div>
 	<div class='options_bar overflow'>
 		<h2 class='header'>Unit Balances</h2>
+		<p>Display account histories as </span>
+			<label><input type='radio' ng-model='report_format' value='chart'>Chart</label> | <label><input type='radio' ng-model='report_format' value='graph'>Graph</label>. 
+		</p>
 		<table ng-show='admin && these_balances' class='balance_summary'>
 			<tr>
 				<th>Unit</th>
@@ -36,9 +39,9 @@
 		</table>
 	</div>
 	<div class='unit_account main_data'>
-		<div ng-show='this_report' class='slightly_small_text full_history'>
-			<h2>Account History for Unit <span ng-bind='reported_unit'></span></h2>
-			<table>
+		<div class='slightly_small_text full_history'>
+			<h2 g-show='this_report'>Account History for Unit <span ng-bind='reported_unit'></span></h2>
+			<table ng-show='this_report && (report_format === "chart")' >
 				<tr>
 					<th>Date</th>
 					<th>Charges</th>
@@ -68,7 +71,7 @@
 				</tr>
 			</table>
 		</div>
-		<div class='report_chart'>
+		<div class='report_chart' ng-show='this_report && report_format === "graph"'>
 			<h2>Account Balance Over Time</h2>
 			<nvd3 data='report_chart_data' options='report_chart_options'></nvd3>
 		</div>
